@@ -1021,7 +1021,7 @@ function validateJson(text){
     if(!eq(neto,expNeto)) add('R','FAV06',`${lab}: precioSinImpuestos (${fmt(neto)}) debería ser ${fmt(expNeto)}`,'Cantidad × valor unitario, menos descuentos, más cargos.','FAV06');
     if(Number.isFinite(neto)) sumNeto+=neto;
     let sT=0; (l.listaImpuestos||[]).forEach((t,k)=>{ const cod=st(t.codigoImpuestoRetencion).trim(), pc=N(t.porcentaje), v=N(t.valorImpuestoRetencion), b=N(t.baseImponible); const P=`${L}.listaImpuestos[${k}]`;
-      const ok=inCat('tributos',cod); out.checks++; mapRow(P+'.codigoImpuestoRetencion',cod,'FAX16',ok?'ok':'bad',ok?catName('tributos',cod):''); if(!ok) add('R','FAX16',`${lab}: tributo «${cod}» no está en la tabla 13.2.2`,'');
+      const ok=inCat('tributos',cod); out.checks++; mapRow(P+'.codigoImpuestoRetencion',cod,'FAX16',ok?'ok':'bad',ok?catName('tributos',cod)+' · llena TaxScheme ID y Name del impuesto':''); if(!ok) add('R','FAX16',`${lab}: tributo «${cod}» no está en la tabla 13.2.2`,'');
       mapRow(P+'.porcentaje',t.porcentaje,'FAX14','');
       out.checks++; const bOk=eq(b,neto); mapRow(P+'.baseImponible',t.baseImponible,'FAX05',bOk?'ok':'warn'); if(!bOk&&Number.isFinite(b)) add('A','FAX05',`${lab}: la base del tributo ${cod} (${fmt(b)}) es distinta del valor neto de la línea (${fmt(neto)})`,'Puede ser correcto si el tributo tiene base especial; confírmelo.');
       out.checks++; const vOk=eq(b*pc/100,v); mapRow(P+'.valorImpuestoRetencion',t.valorImpuestoRetencion,'FAX07',vOk?'ok':'bad'); if(!vOk) add('R','FAX07',`${lab}: el ${fmt(pc)} % de ${fmt(b)} es ${fmt(b*pc/100)}, no ${fmt(v)}`,'');
@@ -1032,7 +1032,7 @@ function validateJson(text){
   // impuestos del encabezado
   let sTaxHdr=0; const hdrTax={};
   (j.listaImpuestos||[]).forEach((t,k)=>{ const cod=st(t.codigoImpuestoRetencion).trim(), pc=N(t.porcentaje), v=N(t.valorImpuestoRetencion), b=N(t.baseImponible); const P=`listaImpuestos[${k}]`;
-    const ok=inCat('tributos',cod); out.checks++; mapRow(P+'.codigoImpuestoRetencion',cod,'FAS16',ok?'ok':'bad',ok?catName('tributos',cod):''); if(!ok) add('R','FAS16',`Tributo «${cod}» no está en la tabla 13.2.2`,'');
+    const ok=inCat('tributos',cod); out.checks++; mapRow(P+'.codigoImpuestoRetencion',cod,'FAS16',ok?'ok':'bad',ok?catName('tributos',cod)+' · llena TaxScheme ID y Name del impuesto':''); if(!ok) add('R','FAS16',`Tributo «${cod}» no está en la tabla 13.2.2`,'');
     mapRow(P+'.baseImponible',t.baseImponible,'FAS05',''); mapRow(P+'.valorImpuestoRetencion',t.valorImpuestoRetencion,'FAS07','');
     if(Number.isFinite(v)) sTaxHdr+=v; const key=cod+'|'+pc; hdrTax[key]={v,b}; });
   Object.entries(taxLines).forEach(([key,s])=>{ const [cod,pc]=key.split('|'); const h=hdrTax[key]; out.checks++;
@@ -1059,16 +1059,22 @@ function validateJson(text){
       if(!dv){ mapRow(P+'.digitoVerificacion','','FAK24','bad'); add('R','FAK24','Falta el dígito de verificación del NIT','Si el tipo de identificación es 31, el DV es obligatorio.','FAK24'); }
       else{ const ok=calc===null||String(calc)===dv; mapRow(P+'.digitoVerificacion',dv,'FAK24',ok?'ok':'bad',calc!==null?`Calculado: ${calc}`:''); if(!ok) add('R','FAK24',`El DV del NIT ${nid} debe ser ${calc}, no ${dv}`,'Calculado con el algoritmo de la DIAN (módulo 11).'); } }
     const em=st(a.email).trim(); if(em){ const ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em); out.checks++; mapRow(P+'.email',em,'FAK55',ok?'ok':'bad'); if(!ok) add('N','FAK55',`El correo «${em}» no parece válido`,''); }
-    const miss=[]; const hasAny=ks=>ks.some(k=>st(a[k]).trim());
+    const hasAny=ks=>ks.find(k=>st(a[k]).trim());
+    // Obligatorio en el anexo: PartyTaxScheme/TaxScheme (FAK39-FAK41)
+    const tk=hasAny(['tributo','codigoTributo','detallesTributarios','tributos','regimen']); out.checks++;
+    if(tk){ const v=st(a[tk]).trim(); const ok=inCat('tribparty',v); mapRow(`${P}.${tk}`,v,'FAK40',ok?'ok':'bad',ok?catName('tribparty',v):'No está en la tabla 13.2.6.2'); if(!ok) add('N','FAK40',`Tributo del adquiriente «${v}» no está en la tabla 13.2.6.2`,'Valores: 01 IVA · 04 INC · ZA IVA e INC · ZZ No aplica.','FAK40'); }
+    else{ mapRow(`${P} → TaxScheme`,'(no viene)','FAK39','bad','Obligatorio en el anexo: cbc:ID y cbc:Name de la tabla 13.2.6.2');
+      add('N','FAK39','Falta el grupo obligatorio TaxScheme del adquiriente (cbc:ID y cbc:Name)','El anexo lo exige (FAK39–FAK41, ocurrencia 1..1) y el JSON no trae ningún dato para llenarlo. Si su proveedor no lo completa —desde su base de clientes o con un valor por defecto—, el XML queda incompleto: la regla de la DIAN genera notificación y el esquema UBL puede rechazarlo. Valores posibles (tabla 13.2.6.2): 01 IVA · 04 INC · ZA IVA e INC · ZZ No aplica. Debe corresponder a lo que dice el RUT del cliente.','FAK39'); }
+    // Opcionales en el anexo
+    const miss=[];
     if(!hasAny(['direccion','direccionFiscal','direccionCompleta'])) miss.push('dirección');
     if(!hasAny(['ciudad','codigoCiudad','municipio','codigoMunicipio'])) miss.push('ciudad o municipio');
     if(!hasAny(['departamento','codigoDepartamento'])) miss.push('departamento');
     if(!hasAny(['pais','codigoPais'])) miss.push('país');
     if(!hasAny(['responsabilidadesFiscales','responsabilidadFiscal','codigoResponsabilidad','obligaciones'])) miss.push('responsabilidades fiscales (TaxLevelCode)');
-    if(!hasAny(['tributo','detallesTributarios','regimen','codigoTributo'])) miss.push('tributo (TaxScheme)');
-    if(miss.length) add('A','FAK26',`Al adquiriente le faltan datos que el UBL sí lleva: ${miss.join(', ')}`,`Confirme si su proveedor tecnológico los completa (de su base de clientes o con valores por defecto). ${tp==='1'?'Para una persona jurídica, un valor por defecto como R-99-PN podría no coincidir con su RUT.':''}`);
+    if(miss.length) add('A','FAK26',`Datos opcionales del adquiriente que no vienen: ${miss.join(', ')}`,`El anexo v1.9 los marca como opcionales, pero si su proveedor los completa por defecto, confirme que coincidan con el RUT del cliente${tp==='1'?' (para una persona jurídica, un valor como R-99-PN probablemente no corresponde)':''}.`);
   });
-  out.note+=` Datos del emisor, resolución de numeración, CUFE y firma los agrega el proveedor, así que no se revisan aquí.`;
+  out.note+=` Los datos del emisor (incluido su TaxScheme), la resolución de numeración, el CUFE y la firma los agrega el proveedor, así que no se revisan aquí. El TaxScheme de cada impuesto (01 = IVA) sí sale del JSON: del campo codigoImpuestoRetencion.`;
   const order={R:0,N:1,A:2}; out.findings.sort((a,b)=>order[a.sev]-order[b.sev]);
   return out;
 }
