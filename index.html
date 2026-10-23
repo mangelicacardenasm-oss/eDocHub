@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>eDocHub</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20width%3D%2248%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%23101828%22/%3E%3Cg%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M15%2012.5v21.5%22/%3E%3Cpath%20d%3D%22M15%2015h10%22/%3E%3Cpath%20d%3D%22M15%2024.5h10%22/%3E%3Cpath%20d%3D%22M15%2034h10%22/%3E%3C/g%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2215%22%20r%3D%223%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2224.5%22%20r%3D%223%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2234%22%20r%3D%223.4%22%20fill%3D%22%236f86ff%22/%3E%3C/svg%3E">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="eDocHub: explorador no oficial del Anexo Técnico 1.9 de factura electrónica de venta de la DIAN: campos, estructura XML, obligatoriedad, reglas de validación y catálogos de códigos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Retícula editorial de 12 columnas: cabecera con tesis y métricas, navegación por partes de la factura, barra de búsqueda; espacio de trabajo en dos columnas (resultados 7/12, ficha 5/12). En móvil, una columna y la ficha como hoja completa. */
+:root{
+  --canvas:#ffffff; --paper:#ffffff; --ink:#101828; --ink-2:#3d4757; --ink-3:#5f6b7a; --rule:#e3e6eb; --rule-2:#cdd2da;
+  --accent:#1f36c4; --accent-ink:#ffffff; --accent-soft:#eef0fd; --accent-line:#aab4ef;
+  --rej:#b42318; --rej-soft:#fdf0ef; --not:#8a4b08; --not-soft:#fdf6e7; --sel:#eef0fd; --mark:#fde68a;
+  --tag:#1f36c4; --mkdot:#6f86ff; --attr:#7a3e9d; --val:#2f6b3a;
+  --f-serif:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-sans:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --canvas:#0d1118; --paper:#141a24; --ink:#eef1f5; --ink-2:#c5ccd6; --ink-3:#98a2b0; --rule:#242c39; --rule-2:#344050;
+  --accent:#8ab0f5; --accent-ink:#0d1a33; --accent-soft:#17233a; --accent-line:#3b5788;
+  --rej:#ff9b91; --rej-soft:#3a1816; --not:#f3c06b; --not-soft:#33260e; --sel:#1b2a45; --mark:#6b5410;
+  --tag:#8ab0f5; --mkdot:#1f36c4; --attr:#d3a6f0; --val:#8fd19c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --canvas:#0d1118; --paper:#141a24; --ink:#eef1f5; --ink-2:#c5ccd6; --ink-3:#98a2b0; --rule:#242c39; --rule-2:#344050;
+  --accent:#8ab0f5; --accent-ink:#0d1a33; --accent-soft:#17233a; --accent-line:#3b5788;
+  --rej:#ff9b91; --rej-soft:#3a1816; --not:#f3c06b; --not-soft:#33260e; --sel:#1b2a45; --mark:#6b5410;
+  --tag:#8ab0f5; --mkdot:#1f36c4; --attr:#d3a6f0; --val:#8fd19c; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--canvas);color:var(--ink);font:15px/1.55 var(--f-sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.mono{font-family:var(--f-mono)}
+mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.wrap{max-width:1360px;margin:0 auto;padding-block:var(--s6) var(--s6);display:flex;flex-direction:column;gap:var(--s5)}
+
+/* ---------- Cabecera: tesis + métricas ---------- */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);padding-bottom:var(--s3);border-bottom:1px solid var(--rule)}
+.brand{display:inline-flex;align-items:center;gap:10px;background:none;border:0;padding:0;font-weight:800;font-size:16px;letter-spacing:-.01em;color:var(--ink)}
+.brand svg{flex:none;color:var(--ink)}
+.brand .wm{font-weight:500;font-size:18px;letter-spacing:-.02em}
+.brand .wm b{font-weight:800}
+.brand small{font-weight:500;font-size:12.5px;color:var(--ink-3);letter-spacing:0}
+.tb-actions{display:flex;gap:var(--s4);align-items:center}
+.linkbtn{background:none;border:0;padding:0;color:var(--ink-2);font-size:14px;font-weight:600}
+.linkbtn:hover{color:var(--accent)}
+
+/* ---------- Cabecera mínima ---------- */
+.hero{display:flex;flex-direction:column;gap:var(--s2);padding-block:var(--s5) var(--s2)}
+.hero h1{font-family:var(--f-sans);font-weight:800;font-size:clamp(28px,3.6vw,42px);line-height:1.1;letter-spacing:-.025em;margin:0;text-wrap:balance;max-width:24ch}
+.hsub{margin:0;color:var(--ink-2);font-size:17px;max-width:62ch}
+.hfacts{margin:var(--s1) 0 0;font-size:13.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:4px 14px}
+.hfacts b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ---------- Navegación por partes ---------- */
+.parts{display:flex;flex-direction:column;gap:var(--s2)}
+.label{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.secsel{display:none;width:100%;border:1px solid var(--rule-2);border-radius:var(--r);background:var(--paper);padding:10px 12px;font-size:15px}
+.tab{border:1px solid var(--rule-2);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:13.5px;color:var(--ink-2);white-space:nowrap;font-weight:500}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
+/* ---------- Barra de búsqueda ---------- */
+.toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:var(--s3);align-items:center}
+.search{display:flex;align-items:center;gap:var(--s2);background:var(--paper);border:1px solid var(--rule-2);border-radius:var(--r);padding:0 var(--s3)}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.search svg{flex:none;color:var(--ink-3)}
+#q{flex:1;min-width:0;border:0;background:transparent;padding:11px 0;font-size:15px;outline:none}
+#q::placeholder{color:var(--ink-3)}
+#clear{border:0;background:none;color:var(--ink-3);font-size:13px;padding:4px}
+.seg{display:inline-flex;border:1px solid var(--rule-2);border-radius:var(--r);background:var(--paper);overflow:hidden}
+.seg button{border:0;background:none;padding:9px 12px;font-size:13.5px;color:var(--ink-2);border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn{border:1px solid var(--rule-2);background:var(--paper);border-radius:var(--r);padding:9px 12px;font-size:13.5px;color:var(--ink-2);display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:var(--ink-3);color:var(--ink)}
+.btn[aria-expanded="true"]{border-color:var(--ink);color:var(--ink)}
+.count-pill{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;padding:0 6px;font-weight:600}
+.morefilters{display:flex;flex-wrap:wrap;gap:var(--s3) var(--s5);padding:var(--s3) 0 0}
+.fgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fgroup > .label{margin-right:var(--s1)}
+.chip{border:1px solid var(--rule-2);background:var(--paper);border-radius:999px;padding:4px 11px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.hints{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--ink-3)}
+.hints .chip{font-family:var(--f-mono);font-size:12px}
+
+/* ---------- Espacio de trabajo ---------- */
+.work{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:var(--s5);align-items:start}
+.panel{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);min-width:0}
+.phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:var(--s3);padding:var(--s4) var(--s4) var(--s3);border-bottom:1px solid var(--rule)}
+.ptitle{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ptitle h2{font-family:var(--f-serif);font-weight:600;font-size:20px;line-height:1.25;margin:0;text-wrap:balance}
+.ptitle p{margin:0;font-size:13px;color:var(--ink-3)}
+.vtabs{display:inline-flex;gap:var(--s4)}
+.vtab{border:0;background:none;padding:var(--s1) 0;font-size:13.5px;color:var(--ink-3);border-bottom:2px solid transparent}
+.vtab[aria-pressed="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s4);padding:var(--s2) var(--s4);font-size:12.5px;color:var(--ink-3);border-bottom:1px solid var(--rule);background:var(--paper)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.list{max-height:calc(100vh - 140px);overflow:auto}
+
+/* Estado: forma + texto, no solo color */
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;white-space:nowrap;color:var(--ink-2)}
+.st i{font-style:normal;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink);flex:none;display:inline-block}
+.st.req i{background:var(--ink)}
+.st.cond i{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
+.st.opt i{background:transparent;border-color:var(--ink-3)}
+.st.opt{color:var(--ink-3)}
+.rb{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;white-space:nowrap;padding:1px 7px;border-radius:4px}
+.rb.r{color:var(--rej);background:var(--rej-soft)}
+.rb.n{color:var(--not);background:var(--not-soft)}
+.rb svg{flex:none}
+.meta{display:flex;gap:var(--s3);align-items:center;flex-wrap:wrap}
+
+.secthead{position:sticky;top:0;z-index:1;background:var(--paper);padding:var(--s3) var(--s4) var(--s1);font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule);display:flex;justify-content:space-between}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px var(--s4);width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:var(--s3) var(--s4);scroll-margin-top:44px}
+.row:hover{background:var(--canvas)}
+.row[aria-selected="true"]{background:var(--sel);box-shadow:inset 3px 0 0 var(--accent)}
+.rname{font-family:var(--f-mono);font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.rname .ns{color:var(--ink-3);font-weight:400}
+.rdesc{grid-column:1;font-size:13.5px;color:var(--ink-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.rid{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);text-align:right}
+.rside{display:flex;flex-direction:column;align-items:flex-end;gap:4px;grid-row:1/3;grid-column:2}
+.empty{padding:var(--s7) var(--s5);text-align:center;color:var(--ink-3)}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:var(--s1)}
+
+/* ---------- Estructura XML tipo editor ---------- */
+.xtools{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s3);align-items:center;justify-content:space-between;padding:var(--s2) var(--s4);border-bottom:1px solid var(--rule)}
+.xtools .linkbtn{font-size:13px}
+.xscroll{overflow:auto;max-height:calc(100vh - 190px)}
+.xed{font-family:var(--f-mono);font-size:13px;line-height:24px;min-width:max-content;padding:var(--s2) 0 var(--s4)}
+.xl{display:grid;grid-template-columns:44px 22px minmax(0,1fr) auto;align-items:center;min-height:24px;cursor:pointer}
+.xl:hover{background:var(--canvas)}
+.xl.on{background:var(--sel)}
+.xl.dim .xc{opacity:.5}
+.ln{color:var(--ink-3);text-align:right;padding-right:10px;font-size:11.5px;user-select:none;opacity:.8}
+.fold{width:12px;height:12px;border:1px solid var(--ink-3);border-radius:2px;display:inline-grid;place-items:center;background:var(--paper);padding:0;margin-left:3px}
+.fold svg{display:block}
+.fold:hover{border-color:var(--accent);color:var(--accent)}
+.xc{white-space:nowrap;display:flex;align-items:center}
+.ind{display:inline-block;width:20px;align-self:stretch;border-left:1px solid var(--rule-2);margin-left:6px;flex:none}
+.ind.path{border-left-color:var(--accent-line);border-left-width:2px}
+.ind:first-child{margin-left:0}
+.lt{color:var(--ink-3)}
+.tn{color:var(--tag);font-weight:500}
+.tn .p{color:var(--ink-3);font-weight:400}
+.an{color:var(--attr)}
+.av{color:var(--val)}
+.tv{color:var(--val)}
+.tv.none{color:var(--ink-3)}
+.attr{border-radius:3px;padding:0 1px;margin-left:.6ch}
+.attr:hover,.attr.on{background:var(--accent-soft);outline:1px solid var(--accent-line)}
+.xmeta{display:flex;gap:var(--s2);align-items:center;padding:0 var(--s3) 0 var(--s3);font-family:var(--f-sans);position:sticky;right:0;background:var(--paper);align-self:stretch;border-left:1px solid var(--rule);margin-left:var(--s4)}
+.xl:hover .xmeta{background:var(--canvas)}
+.xl.on .xmeta{background:var(--sel)}
+.xmeta .st .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.xmeta .xid{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+.xmeta .st{font-size:11.5px}
+.xmeta .rb{font-size:11px;padding:0 5px}
+.collapsed-n{color:var(--ink-3);font-family:var(--f-sans);font-size:12px;margin-left:var(--s2)}
+
+/* ---------- Ficha ---------- */
+.detail{position:sticky;top:var(--s4);max-height:calc(100vh - 32px);overflow:auto}
+.dhead{padding:var(--s5) var(--s5) var(--s4);display:flex;flex-direction:column;gap:var(--s2);border-bottom:1px solid var(--rule)}
+.dtop{display:flex;justify-content:space-between;gap:var(--s2);align-items:flex-start}
+.crumbs{display:flex;flex-wrap:wrap;gap:0 2px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);min-width:0}
+.crumbs button{background:none;border:0;padding:0;color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--rule-2);text-underline-offset:2px;font:inherit}
+.crumbs button:hover{color:var(--accent)}
+.dclose{display:none}
+.dname{font-family:var(--f-mono);font-size:22px;font-weight:500;line-height:1.25;margin:0;overflow-wrap:anywhere}
+.dname .ns{color:var(--ink-3);font-weight:400}
+.ddesc{margin:0;color:var(--ink-2);font-size:15px}
+.dsec{padding:var(--s4) var(--s5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--s3)}
+.dsec:last-child{border-bottom:0}
+.dsec h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);display:flex;justify-content:space-between;gap:var(--s2)}
+.answer{background:var(--accent-soft);border-bottom:1px solid var(--rule)}
+.answer h3{color:var(--accent)}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:var(--s2) var(--s3);margin:0;font-size:14px}
+.kv dt{color:var(--ink-3);font-size:13px;padding-top:1px}
+.kv dd{margin:0;min-width:0}
+.ex{display:inline-flex;flex-wrap:wrap;gap:var(--s2);align-items:baseline}
+.exv{font-family:var(--f-mono);font-size:14px;font-weight:500;background:var(--paper);border:1px solid var(--accent-line);border-radius:4px;padding:1px 8px;overflow-wrap:anywhere}
+.exs{font-size:12px;color:var(--ink-3)}
+.special{border-left:3px solid var(--not);padding-left:var(--s3);font-size:14px}
+.vals{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.vchip{background:var(--paper);border:1px solid var(--rule-2);border-radius:4px;padding:1px 7px;font-size:12.5px;color:var(--ink-2)}
+.vchip b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.vchip.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.code{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.code pre{align-self:stretch}
+.code pre{margin:0;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);padding:var(--s3) var(--s4);font-family:var(--f-mono);font-size:12.5px;line-height:1.6;overflow-x:auto;white-space:pre}
+.copy{border:1px solid var(--rule-2);background:var(--paper);border-radius:4px;padding:2px 8px;font-size:12px;color:var(--ink-2)}
+.copy:hover{border-color:var(--accent);color:var(--accent)}
+.rule{display:flex;flex-direction:column;gap:4px;padding:var(--s3) 0;border-top:1px solid var(--rule)}
+.rtop{display:flex;gap:var(--s2);align-items:center}
+.rule:first-of-type{border-top:0;padding-top:0}
+.rule.hit{background:var(--sel);margin:0 calc(-1 * var(--s3));padding-left:var(--s3);padding-right:var(--s3);border-radius:var(--r)}
+.rcode{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+.rtext{margin:0;font-size:14px;overflow-wrap:anywhere}
+.rmsg{margin:0;font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+.rmsg b{font-weight:600;color:var(--ink-3);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;margin-right:6px}
+.note{border-left:3px solid var(--not);background:var(--not-soft);padding:var(--s2) var(--s3);font-size:13.5px;border-radius:0 var(--r) var(--r) 0}
+.tree2{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:5px var(--s3);border:0;border-bottom:1px solid var(--rule);background:var(--paper);text-align:left;width:100%}
+.trow:last-child{border-bottom:0}
+.trow:hover{background:var(--canvas)}
+.trow .nm{font-family:var(--f-mono);font-size:12.5px;display:flex;align-items:center;min-width:0;overflow-wrap:anywhere}
+.trow .ind{align-self:stretch;min-height:18px}
+details.tech{border-bottom:1px solid var(--rule)}
+details.tech summary{list-style:none;padding:var(--s4) var(--s5);font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);display:flex;justify-content:space-between}
+details.tech summary::-webkit-details-marker{display:none}
+details.tech summary::after{content:"Mostrar";text-transform:none;letter-spacing:0;font-weight:500;color:var(--accent);font-size:13px}
+details.tech[open] summary::after{content:"Ocultar"}
+details.tech .inner{padding:0 var(--s5) var(--s4);display:flex;flex-direction:column;gap:var(--s3)}
+.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s3);margin:0}
+.specs dt{font-size:12px;color:var(--ink-3)}
+.specs dd{margin:0;font-size:14px;overflow-wrap:anywhere}
+.xp{display:flex;gap:var(--s2);align-items:flex-start;background:var(--canvas);border-radius:4px;padding:var(--s2) var(--s3)}
+.xp code{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12.5px}
+.obs{margin:0;font-size:13.5px;color:var(--ink-2)}
+.small{font-size:12.5px;color:var(--ink-3);margin:0}
+.small code{font-size:12px;overflow-wrap:anywhere}
+.textlink{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;font-size:13.5px;text-align:left}
+
+/* ---------- Catálogos ---------- */
+.cat{padding:var(--s5) var(--s4);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s3);scroll-margin-top:44px}
+.cat.sel{background:var(--sel)}
+.cat h3{margin:0;font-family:var(--f-serif);font-size:19px;font-weight:600;line-height:1.3}
+.cat .sub{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s3);font-size:12.5px;color:var(--ink-3)}
+.cat .els{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);overflow-wrap:anywhere}
+.cat p{margin:0;font-size:14px}
+.homo{font-size:14px}
+.homo b{font-weight:600}
+.tblwrap{overflow:auto;max-height:300px;border:1px solid var(--rule);border-radius:var(--r)}
+table.codes{border-collapse:collapse;width:100%;font-size:13px}
+.codes th,.codes td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+.codes thead th{position:sticky;top:0;background:var(--paper);font-size:11.5px;color:var(--ink-3);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.codes td:first-child{font-family:var(--f-mono);white-space:nowrap;font-weight:500}
+.codes td:nth-child(3){color:var(--ink-2)}
+.tnotes p{font-size:12.5px;color:var(--ink-3)}
+.fchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fchips .chip{font-family:var(--f-mono);font-size:11.5px;padding:2px 8px}
+.pend{font-size:13px;color:var(--ink-3);border:1px dashed var(--rule-2);border-radius:var(--r);padding:var(--s2) var(--s3);overflow-wrap:anywhere}
+
+footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s2) var(--s5);font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--rule-2);padding-top:var(--s4)}
+dialog{border:1px solid var(--rule-2);border-radius:var(--r);background:var(--paper);color:var(--ink);max-width:min(640px,calc(100vw - 32px));padding:0}
+dialog::backdrop{background:rgba(10,16,28,.5)}
+.dlg{padding:var(--s5) var(--s5);display:flex;flex-direction:column;gap:var(--s3);font-size:14.5px}
+.dlg h2{font-family:var(--f-serif);font-weight:600;margin:0;font-size:24px}
+.dlg p{margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:var(--r);font-size:13px;z-index:30}
+
+@media (max-width:1080px){
+}
+@media (max-width:900px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .list,.xscroll{max-height:none}
+  .detail{position:fixed;inset:0;z-index:20;max-height:none;border-radius:0;border:0;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  .detail:not(.open){display:none}
+  .dclose{display:inline-flex}
+  .toolbar{grid-template-columns:minmax(0,1fr) auto}
+  .toolbar .seg{grid-column:1/-1;order:3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .toolbar .seg button{padding:8px 4px;font-size:12.5px}
+}
+@media (max-width:560px){
+  .tabs{display:none}
+  .secsel{display:block}
+  .brand small{display:none}
+  .specs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kv{grid-template-columns:minmax(0,1fr)}
+  .kv dt{padding-top:var(--s1)}
+  .dhead,.dsec,details.tech summary,details.tech .inner{padding-left:var(--s4);padding-right:var(--s4)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <button class="brand" type="button" id="homeBtn" aria-label="Ver la factura completa"><svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor"/><g stroke="var(--paper)" stroke-width="3" stroke-linecap="round" fill="none"><path d="M15 12.5v21.5"/><path d="M15 15h10"/><path d="M15 24.5h10"/><path d="M15 34h10"/></g><circle cx="31" cy="15" r="3" fill="var(--paper)"/><circle cx="31" cy="24.5" r="3" fill="var(--paper)"/><circle cx="31" cy="34" r="3.4" fill="var(--mkdot)"/></svg><span class="wm">eDoc<b>Hub</b></span> <small>Factura electrónica · Anexo técnico DIAN v1.9</small></button>
+    <div class="tb-actions"><button class="linkbtn" type="button" id="aboutBtn">Cómo leerlo</button></div>
+  </header>
+
+  <div id="app" style="display:flex;flex-direction:column;gap:var(--s5)">
+  <section class="hero" aria-labelledby="heroTitle">
+    <h1 id="heroTitle">Qué debe enviar en cada campo de la factura electrónica</h1>
+    <p class="hsub">Estructura XML, obligatoriedad, reglas de validación y códigos de la DIAN, según el anexo técnico v1.9.</p>
+    <p class="hfacts" id="hfacts"></p>
+  </section>
+  <nav class="parts" aria-label="Partes de la factura">
+    <span class="label" id="partsLabel">Parte de la factura</span>
+    <div class="tabs" role="tablist" aria-labelledby="partsLabel" id="tabs"></div>
+    <select id="secSel" class="secsel" aria-labelledby="partsLabel"></select>
+  </nav>
+
+  <section aria-label="Búsqueda">
+    <div class="toolbar">
+      <label class="search" for="q">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span class="sr">Buscar</span>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Campo, XPath, código de regla o mensaje de rechazo de la DIAN">
+        <button id="clear" type="button" hidden>Limpiar</button>
+      </label>
+      <div class="seg" role="group" aria-label="Ocurrencia" id="segOblig">
+        <button type="button" data-oblig="" aria-pressed="true">Todos</button>
+        <button type="button" data-oblig="Obligatorio" aria-pressed="false">Obligatorios</button>
+        <button type="button" data-oblig="Condicional" aria-pressed="false">Condicionales</button>
+        <button type="button" data-oblig="Opcional" aria-pressed="false">Opcionales</button>
+      </div>
+      <button class="btn" type="button" id="moreBtn" aria-expanded="false" aria-controls="more">Más filtros <span class="count-pill" id="moreCount" hidden>0</span></button>
+    </div>
+    <div class="morefilters" id="more" hidden>
+      <div class="fgroup" role="group" aria-label="Tipo de nodo"><span class="label">Tipo</span>
+        <button class="chip" type="button" data-f="tipo" data-v="G" aria-pressed="false">Grupo</button>
+        <button class="chip" type="button" data-f="tipo" data-v="E" aria-pressed="false">Elemento</button>
+        <button class="chip" type="button" data-f="tipo" data-v="A" aria-pressed="false">Atributo</button>
+      </div>
+      <div class="fgroup" role="group" aria-label="Reglas"><span class="label">Reglas</span>
+        <button class="chip" type="button" data-f="regla" data-v="R" aria-pressed="false">Con rechazo</button>
+        <button class="chip" type="button" data-f="regla" data-v="N" aria-pressed="false">Con notificación</button>
+      </div>
+      <div class="fgroup" role="group" aria-label="Valores"><span class="label">Valor</span>
+        <button class="chip" type="button" data-f="valor" data-v="cat" aria-pressed="false">Usa catálogo</button>
+        <button class="chip" type="button" data-f="valor" data-v="lit" aria-pressed="false">Valor fijo</button>
+      </div>
+      <div class="hints" id="hints"><span class="label">Ejemplos de búsqueda</span></div>
+    </div>
+  </section>
+
+  <div class="work">
+    <section class="panel" aria-label="Resultados">
+      <div class="phead">
+        <div class="ptitle"><h2 id="ptitle">Factura completa</h2><p id="psub" aria-live="polite">Cargando…</p></div>
+        <div class="vtabs" role="group" aria-label="Vista">
+          <button class="vtab" type="button" id="vXml" aria-pressed="true">Estructura XML</button>
+          <button class="vtab" type="button" id="vLista" aria-pressed="false">Lista</button>
+          <button class="vtab" type="button" id="vCat" aria-pressed="false">Catálogos</button>
+        </div>
+      </div>
+      <div class="legend" id="legend">
+        <span><span class="st req"><i aria-hidden="true"></i>Obligatorio</span> siempre se envía</span>
+        <span><span class="st cond"><i aria-hidden="true"></i>Condicional</span> según su grupo o un caso</span>
+        <span><span class="st opt"><i aria-hidden="true"></i>Opcional</span> puede omitirse</span>
+        <span><span class="rb r">rechazo</span> la DIAN rechaza la factura</span>
+        <span><span class="rb n">notificación</span> la acepta con advertencia</span>
+      </div>
+      <div id="list"></div>
+    </section>
+    <aside class="panel detail" id="detail" aria-label="Ficha del campo"></aside>
+  </div>
+
+  </div>
+
+  <footer>
+    <span><b>eDocHub</b> · Fuente: Anexo técnico de factura electrónica de venta v1.9 (DIAN, Resolución 000165 de 2023) y tablas de la Caja de herramientas DIAN.</span>
+    <span>Proyecto independiente, sin relación con la DIAN. Verifique siempre contra el anexo vigente.</span>
+  </footer>
+</div>
+
+<dialog id="about">
+  <div class="dlg">
+    <h2>Cómo leer esta herramienta</h2>
+    <p><b>Obligatorio</b> (círculo lleno): el campo siempre se envía. <b>Condicional</b> (medio círculo): es obligatorio solo si se envía su grupo, o el anexo lo exige en ciertos casos. <b>Opcional</b> (círculo vacío): puede omitirse.</p>
+    <p><b>Rechazo</b>: si el campo no cumple la regla, la DIAN rechaza la factura. <b>Notificación</b>: la DIAN acepta la factura y devuelve una advertencia.</p>
+    <p>La vista <b>Estructura XML</b> muestra la factura como un documento XML: cada grupo se abre y se cierra, las líneas verticales unen un grupo con sus campos y los atributos aparecen dentro de su etiqueta. Los valores mostrados son ejemplos.</p>
+    <p><b>Fuentes.</b> Campos (sección 6.1, páginas 21 a 110) y reglas (sección 8.2, páginas 375 a 460) extraídos del PDF oficial del anexo 1.9, conservando sus textos. Los códigos de los catálogos vienen de los Excel de la Caja de herramientas DIAN, carpeta «Tablas Referenciadas». Faltan las tablas de países, departamentos, municipios y códigos postales.</p>
+    <p>Cuando el anexo tiene una inconsistencia (un XPath, un nombre de campo, un tamaño o una referencia a tabla), la ficha la señala en una nota.</p>
+    <p class="small">Herramienta no oficial. Verifique siempre contra el anexo técnico vigente publicado por la DIAN.</p>
+    <div><button class="btn" type="button" id="aboutClose">Cerrar</button></div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+let D=null, TREE=null; const byId=new Map(), ruleById=new Map(), secById=new Map(), catById=new Map();
+const state={q:'',sec:'',oblig:'',tipo:'',regla:'',valor:'',view:'xml',sel:null,selCat:null,hitRule:null,expanded:new Set(),reqOnly:null,_onlyShown:false};
+const HINTS=['CUFE','FAU14','NIT del adquiriente','kilogramo','No fue informado'];
+const ROOTS={enc:'FAD01',ext:'FAA02',per:'FAE01',ref:'FAF01',emi:'FAJ01',adq:'FAK01',aut:'FAL01',ent:'FAM01',pag:'FAN01',dto:'FAQ01',imp:'FAS01',ret:'FAT01',tot:'FAU01',lin:'FAV01'};
+const TAB_ORDER=['','enc','ext','emi','adq','lin','imp','ret','tot','pag','dto','ent','ref','per','aut'];
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const terms=()=>norm(state.q).split(/\s+/).filter(Boolean);
+function hl(text){
+  const STOP=new Set(['de','la','el','en','del','los','las','un','una','y','o','a','al','se','no','por','con','que','es','si']);
+  const t=terms().filter(x=>x.length>2&&!STOP.has(x)); const plain=String(text??'');
+  if(!t.length) return esc(plain);
+  const n=norm(plain), ranges=[];
+  t.forEach(term=>{let i=0;while((i=n.indexOf(term,i))>-1){ranges.push([i,i+term.length]);i+=term.length;}});
+  if(!ranges.length) return esc(plain);
+  ranges.sort((a,b)=>a[0]-b[0]); const m=[];
+  ranges.forEach(r=>{if(m.length&&r[0]<=m[m.length-1][1]) m[m.length-1][1]=Math.max(m[m.length-1][1],r[1]); else m.push(r.slice());});
+  let out='',p=0; m.forEach(([a,b])=>{out+=esc(plain.slice(p,a))+'<mark>'+esc(plain.slice(a,b))+'</mark>';p=b;}); return out+esc(plain.slice(p));
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),1600);}
+function copy(text,what){
+  what=what||'XPath';
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(what+' copiado');}catch(e){toast('Seleccione el texto y cópielo manualmente');}ta.remove();};
+  try{navigator.clipboard.writeText(text).then(()=>toast(what+' copiado')).catch(fb);}catch(e){fb();}
+}
+const split=n=>n.includes(':')?n.split(':'):['',n];
+const nameHtml=n=>{const [p,l]=split(n);return (p?`<span class="ns">${esc(p)}:</span>`:'')+hl(l);};
+
+/* ---------- Componentes de estado ---------- */
+const ICON_R='<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.6"/></svg>';
+const ICON_N='<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.5v4.5" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="8.3" r=".9" fill="currentColor"/></svg>';
+function stBadge(o,title,compact){
+  const cls={Obligatorio:'req',Condicional:'cond',Opcional:'opt'}[o]; if(!cls) return '';
+  return `<span class="st ${cls}" title="${esc(title||o)}"><i aria-hidden="true"></i>${compact?`<span class="lab">${o}</span>`:o}</span>`;
+}
+function ruleBadges(nR,nN,short){
+  let h='';
+  if(nR) h+=`<span class="rb r" title="Si no cumple, la DIAN rechaza la factura">${ICON_R}${nR}${short?'':' '+(nR>1?'rechazos':'rechazo')}</span>`;
+  if(nN) h+=`<span class="rb n" title="Si no cumple, la DIAN acepta la factura con una notificación">${ICON_N}${nN}${short?'':' '+(nN>1?'notificaciones':'notificación')}</span>`;
+  return h;
+}
+
+/* ---------- Índice y búsqueda ---------- */
+function index(){
+  D.campos.forEach(c=>{
+    byId.set(c.id,c);
+    c._rules=c.reglas.map(id=>ruleById.get(id)).filter(Boolean);
+    c._nR=c._rules.filter(r=>r.efecto==='R').length; c._nN=c._rules.filter(r=>r.efecto==='N').length;
+    c._hId=norm(c.id+' '+c.reglas.join(' ')); c._hName=norm(c.nombre+' '+c.campo); c._hXp=norm(c.xpath+' '+c.xpathAnexo);
+    c._hTxt=norm([c.desc,c.obs,c.literal||'',...c._rules.map(r=>r.regla+' '+r.mensaje),...(c.cat||[]).map(x=>{const k=catById.get(x.cat);return k?k.nombre+' '+k.tabla:''})].join(' '));
+  });
+}
+function score(c,ts){
+  if(state.sec&&c.seccion!==state.sec) return 0;
+  if(state.oblig&&c.obligEf!==state.oblig) return 0;
+  if(state.tipo&&c.tipo!==state.tipo) return 0;
+  if(state.regla==='R'&&!c._nR) return 0;
+  if(state.regla==='N'&&!c._nN) return 0;
+  if(state.valor==='cat'&&!(c.cat&&c.cat.length)) return 0;
+  if(state.valor==='lit'&&!c.literal) return 0;
+  if(!ts.length) return 1;
+  let s=0;
+  for(const t of ts){
+    let v=0;
+    if(c._hId.split(' ').includes(t)) v=100; else if(c._hId.includes(t)) v=40;
+    else if(c._hName.includes(t)) v=c._hName.split(/[ :@]/).includes(t)?60:30;
+    else if(c._hXp.includes(t)) v=15; else if(c._hTxt.includes(t)) v=5;
+    if(!v) return 0; s+=v;
+  }
+  return s;
+}
+function results(){
+  const ts=terms(); const out=[];
+  D.campos.forEach((c,i)=>{const s=score(c,ts); if(s) out.push({c,s,i});});
+  if(ts.length) out.sort((a,b)=>b.s-a.s||a.i-b.i);
+  return out.map(o=>o.c);
+}
+function findHitRule(c){
+  const ts=terms(); if(!ts.length) return null;
+  for(const r of c._rules) if(ts.some(t=>norm(r.id)===t)) return r.id;
+  for(const r of c._rules){const h=norm(r.regla+' '+r.mensaje); if(ts.every(t=>h.includes(t))) return r.id;}
+  return null;
+}
+const filtersActive=()=>!!(state.q||state.oblig||state.tipo||state.regla||state.valor);
+
+/* ---------- Árbol ---------- */
+function buildTree(){
+  TREE={seg:'Invoice',path:'/Invoice',kids:new Map(),fields:[]};
+  D.campos.forEach(c=>{
+    const segs=c.xpath.split('/').filter(Boolean); let n=TREE;
+    for(let i=1;i<segs.length;i++){const s=segs[i]; if(!n.kids.has(s)) n.kids.set(s,{seg:s,path:n.path+'/'+s,kids:new Map(),fields:[]}); n=n.kids.get(s);}
+    n.fields.push(c); c._node=n;
+  });
+  TREE.fields=D.campos.filter(c=>c.xpath==='/Invoice');
+}
+function findNode(path){const segs=path.split('/').filter(Boolean);let n=TREE;for(let i=1;i<segs.length;i++){n=n.kids.get(segs[i]);if(!n)return null;}return n;}
+const elemKids=n=>[...n.kids.values()].filter(k=>!k.seg.startsWith('@'));
+const attrKids=n=>[...n.kids.values()].filter(k=>k.seg.startsWith('@'));
+function countDesc(n){let k=0; n.kids.forEach(x=>{k+=x.fields.length?1:0; k+=countDesc(x);}); return k;}
+function expandTo(c){let acc=''; c.xpath.split('/').filter(Boolean).forEach((s,i,a)=>{acc+='/'+s; if(i<a.length-1) state.expanded.add(acc);}); if(c._node&&elemKids(c._node).length) state.expanded.add(c.xpath);}
+
+/* ---------- Encabezado del panel ---------- */
+function panelHead(rs){
+  const sec=state.sec?secById.get(state.sec):null;
+  const pool=D.campos.filter(c=>!state.sec||c.seccion===state.sec);
+  const nReq=pool.filter(c=>c.obligEf==='Obligatorio').length, nCond=pool.filter(c=>c.obligEf==='Condicional').length;
+  let title, sub;
+  if(state.view==='cat'){
+    const conCod=D.catalogos.filter(k=>k.codigos.length).length;
+    title=`${D.catalogos.length} catálogos de códigos, ${conCod} con sus códigos cargados`;
+    sub='Busque un código o una descripción, por ejemplo «kilogramo», «cédula» o «ReteICA».';
+  } else if(sec){
+    title=nReq?`${sec.nombre}: ${nReq} de sus ${pool.length} campos son siempre obligatorios`:`${sec.nombre}: ninguno de sus ${pool.length} campos es obligatorio siempre`;
+    sub=(nCond?`${nCond} más son condicionales. `:'')+sec.desc+'.';
+  } else {
+    title=`${nReq} de los ${pool.length} campos de la factura son siempre obligatorios`;
+    sub=`${nCond} son condicionales: dependen de un grupo opcional o de un caso del anexo.`;
+  }
+  if(filtersActive()&&state.view!=='cat') sub=`${rs.length} campo${rs.length!==1?'s':''} coinciden con la búsqueda y los filtros.`;
+  $('#ptitle').textContent=title; $('#psub').textContent=sub;
+  $('#legend').hidden=state.view==='cat';
+}
+
+/* ---------- Vista lista ---------- */
+function renderList(rs){
+  let h='', last=null; const ts=terms();
+  rs.forEach(c=>{
+    if(!ts.length&&!state.sec&&c.seccion!==last){const s=secById.get(c.seccion);h+=`<div class="secthead"><span>${esc(s.nombre)}</span><span>${rs.filter(x=>x.seccion===c.seccion).length}</span></div>`;last=c.seccion;}
+    h+=`<button class="row" type="button" data-id="${c.id}" aria-selected="${state.sel===c.id}" title="${esc(c.xpath)}">
+      <span class="rname">${nameHtml(c.nombre)}</span>
+      <span class="rside"><span class="meta">${stBadge(c.obligEf,c.obligNota)}${ruleBadges(c._nR,c._nN,true)}</span><span class="rid">${hl(c.id)}</span></span>
+      <span class="rdesc">${c.desc?hl(c.desc):'<span style="color:var(--ink-3)">Sin descripción en el anexo</span>'}</span>
+    </button>`;
+  });
+  return `<div class="list">${h}</div>`;
+}
+
+/* ---------- Vista estructura XML ---------- */
+const FOLD_MINUS='<svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 4h6" stroke="currentColor" stroke-width="1.3"/></svg>';
+const FOLD_PLUS='<svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 4h6M4 1v6" stroke="currentColor" stroke-width="1.3"/></svg>';
+function renderXml(rs){
+  const vis=new Set(rs.map(c=>c.id));
+  const filtered=filtersActive();
+  const show=new Set();
+  if(filtered) rs.forEach(c=>{let acc='';c.xpath.split('/').filter(Boolean).forEach(s=>{acc+='/'+s;show.add(acc);});});
+  const selC=byId.get(state.sel); const selPath=selC?selC.xpath:'';
+  let ln=0; const out=[];
+  const inds=(depth,path)=>{let s='';const segs=path.split('/').filter(Boolean);
+    for(let i=0;i<depth;i++){const anc='/'+segs.slice(0,i+1).join('/'); s+=`<span class="ind${selPath.startsWith(anc+'/')?' path':''}"></span>`;} return s;};
+  const tag=(seg,close)=>{const [p,l]=split(seg);return `<span class="lt">&lt;${close?'/':''}</span><span class="tn">${p?`<span class="p">${esc(p)}:</span>`:''}${hl(l)}</span>`;};
+  const meta=f=>f?`<span class="xmeta"><span class="xid">${esc(f.id)}</span>${stBadge(f.obligEf,f.obligNota,true)}${ruleBadges(f._nR,f._nN,true)}</span>`:'<span class="xmeta"></span>';
+  const attrs=n=>attrKids(n).filter(a=>!filtered||show.has(a.path)).map(a=>{const f=a.fields[0];const v=f&&f.ejemplo?f.ejemplo:'…';
+    return ` <span class="attr${f&&f.id===state.sel?' on':''}" ${f?`data-id="${f.id}" title="${esc(f.id+' · '+f.obligEf)}"`:''}><span class="an">${hl(a.seg.slice(1))}</span><span class="lt">="</span><span class="av">${esc(v)}</span><span class="lt">"</span></span>`;}).join('');
+  function line(depth,path,fold,content,f,extra){
+    ln++; const on=f&&(f.id===state.sel||(f._node&&[...f._node.kids.values()].some(k=>k.seg.startsWith('@')&&k.fields.some(x=>x.id===state.sel))&&false));
+    const dim=filtered&&f&&!vis.has(f.id);
+    out.push(`<div class="xl${f&&f.id===state.sel?' on':''}${dim?' dim':''}" ${f?`data-id="${f.id}"`:''} ${extra||''}><span class="ln">${ln}</span><span>${fold}</span><span class="xc">${inds(depth,path)}${content}</span>${meta(f)}</div>`);
+  }
+  function walk(n,depth){
+    if(filtered&&!show.has(n.path)) return;
+    const f=n.fields[0]; const ek=elemKids(n).filter(k=>!filtered||show.has(k.path));
+    if(ek.length){
+      const open=filtered||state.expanded.has(n.path);
+      const btn=`<button class="fold" type="button" data-fold="${esc(n.path)}" aria-label="${open?'Contraer':'Expandir'} ${esc(n.seg)}" aria-expanded="${open}">${open?FOLD_MINUS:FOLD_PLUS}</button>`;
+      if(open){
+        line(depth,n.path,btn,`${tag(n.seg)}${attrs(n)}<span class="lt">&gt;</span>`,f);
+        ek.forEach(k=>walk(k,depth+1));
+        ln++; out.push(`<div class="xl close" ${f?`data-id="${f.id}"`:''}><span class="ln">${ln}</span><span></span><span class="xc">${inds(depth,n.path)}${tag(n.seg,true)}<span class="lt">&gt;</span></span><span class="xmeta"></span></div>`);
+      } else {
+        const nd=countDesc(n);
+        line(depth,n.path,btn,`${tag(n.seg)}${attrs(n)}<span class="lt">&gt;</span><span class="lt">…</span>${tag(n.seg,true)}<span class="lt">&gt;</span><span class="collapsed-n">${nd} campo${nd!==1?'s':''}</span>`,f);
+      }
+    } else {
+      const v=f&&f.ejemplo?`<span class="tv">${esc(f.ejemplo)}</span>`:'<span class="tv none">…</span>';
+      line(depth,n.path,'',`${tag(n.seg)}${attrs(n)}<span class="lt">&gt;</span>${v}${tag(n.seg,true)}<span class="lt">&gt;</span>`,f);
+    }
+  }
+  const start=state.sec&&!filtered?TREE:TREE; walk(start,0);
+  return `<div class="xtools"><span class="small">Clic en una línea o en un atributo para ver su ficha. Los valores son ejemplos.</span><span class="meta"><button class="linkbtn" type="button" data-xall="open">Expandir todo</button><button class="linkbtn" type="button" data-xall="close">Contraer todo</button></span></div>
+    <div class="xscroll"><div class="xed" role="tree" aria-label="Estructura XML de la factura">${out.join('')}</div></div>`;
+}
+
+/* ---------- Vista catálogos ---------- */
+function renderCats(){
+  const ts=terms(); const hit=x=>{const h=norm(x.c+' '+x.d+' '+x.x);return ts.every(t=>h.includes(t));};
+  const cs=D.catalogos.map(k=>{
+    if(!ts.length) return {k,codes:k.codigos,part:false};
+    const meta=norm([k.nombre,k.tabla,k.elementos,k.nota,k.homologar,k.campos.join(' ')].join(' '));
+    const mh=ts.every(t=>meta.includes(t)); const hs=k.codigos.filter(hit);
+    if(!mh&&!hs.length) return null; return {k,codes:hs.length&&!mh?hs:k.codigos,part:hs.length>0&&!mh};
+  }).filter(Boolean);
+  if(!cs.length) return '<div class="empty"><b>Ningún catálogo coincide</b>Pruebe con otro término, por ejemplo «kilogramo», «cédula» o «ReteICA».</div>';
+  const card=({k,codes,part})=>{const hasX=codes.some(x=>x.x); return `<article class="cat${state.selCat===k.id?' sel':''}" id="cat-${k.id}">
+    <h3>${hl(k.nombre)}</h3>
+    <div class="sub"><span>Tabla ${esc(k.tabla)}</span><span>Anexo, numeral ${esc(k.seccion)}, pág. ${k.pag}</span>${k.codigos.length?`<span>${part?`${codes.length} de ${k.codigos.length} códigos coinciden`:`${k.codigos.length} código${k.codigos.length!==1?'s':''}`}</span>`:''}</div>
+    <p class="els">${hl(k.elementos)}</p>
+    <p>${hl(k.nota)}</p>
+    <p class="homo"><b>Qué homologar.</b> ${hl(k.homologar)}</p>
+    ${k.codigos.length?`<div class="tblwrap"><table class="codes"><thead><tr><th scope="col">Código</th><th scope="col">Descripción</th>${hasX?'<th scope="col">Detalle</th>':''}</tr></thead><tbody>${codes.map(x=>`<tr><td>${hl(x.c)}</td><td>${hl(x.d)}</td>${hasX?`<td>${hl(x.x)}</td>`:''}</tr>`).join('')}</tbody></table></div>
+      <p class="small">${k.fuenteCodigos==='caja'?`Fuente: Caja de herramientas DIAN, archivo ${esc(k.archivoCaja)}.`:'Fuente: PDF del anexo técnico.'}</p>
+      ${(k.notasTabla||[]).length?`<div class="tnotes">${k.notasTabla.map(n=>`<p>${hl(n)}</p>`).join('')}</div>`:''}`
+    :`<p class="pend">Códigos aún no cargados. La DIAN los publica en Excel en la Caja de herramientas: <code>${esc(k.caja)}</code></p>`}
+    ${k.campos.length?`<div class="fchips"><span class="small">Lo usan ${k.campos.length} campo${k.campos.length!==1?'s':''}:</span>${k.campos.map(id=>`<button class="chip" type="button" data-goto="${id}">${esc(id)} ${esc(byId.get(id).nombre)}</button>`).join('')}</div>`:'<p class="small">No lo usa la factura de venta. Aplica a notas, eventos u otros servicios.</p>'}
+  </article>`;};
+  const fac=cs.filter(o=>o.k.ambito!=='otros'), otr=cs.filter(o=>o.k.ambito==='otros');
+  return `<div class="list">${fac.length?`<div class="secthead"><span>Usados por la factura de venta</span><span>${fac.length}</span></div>${fac.map(card).join('')}`:''}${otr.length?`<div class="secthead"><span>Otros documentos y servicios</span><span>${otr.length}</span></div>${otr.map(card).join('')}`:''}</div>`;
+}
+
+/* ---------- Render principal ---------- */
+function render(){
+  const rs=state.view==='cat'?[]:results();
+  panelHead(rs);
+  const list=$('#list');
+  if(state.view!=='cat'&&!rs.length){list.innerHTML='<div class="empty"><b>Ningún campo coincide</b>Pruebe con otro término, un código como FAJ20 o quite algún filtro.</div>';return;}
+  if(state.view!=='cat'&&state.sel&&!rs.some(c=>c.id===state.sel)){setTimeout(()=>select(rs[0].id,{open:false}),0);}
+  list.innerHTML=state.view==='cat'?renderCats():state.view==='lista'?renderList(rs):renderXml(rs);
+}
+
+/* ---------- Ficha ---------- */
+function crumbs(c){
+  const segs=c.xpath.split('/').filter(Boolean); let acc=''; const parts=[];
+  segs.forEach((s,i)=>{acc+='/'+s; const n=findNode(acc); const fid=n&&n.fields[0]?n.fields[0].id:null;
+    parts.push(i<segs.length-1&&fid?`<button type="button" data-goto="${fid}">${esc(s)}</button>`:`<span>${esc(s)}</span>`);});
+  return parts.join('<span aria-hidden="true">/</span>');
+}
+function answer(c){
+  const g=c.guia||[];
+  const que=g.filter(s=>/^Envíe|^Es un grupo|^Si son varios|^Según el tipo|^Los valores monetarios/.test(s)).join(' ');
+  const cuando=g.filter(s=>/^Obligatorio|^Opcional/.test(s)).join(' ');
+  const falla=g.filter(s=>/^Si no cumple/.test(s)).join(' ').replace(/^Si no cumple, /,'');
+  const casos=g.filter(s=>/^Caso especial/.test(s)).map(s=>s.replace(/^Caso especial del anexo: /,''));
+  const otros=g.filter(s=>/^El cálculo|^La firma/.test(s));
+  const cats=(c.cat||[]).map(x=>catById.get(x.cat)).filter(Boolean);
+  const ck=cats.find(k=>k.codigos.length&&k.id!=='tarifas'); const col=ck?(c.cat.find(x=>x.cat===ck.id)||{}).col:''; const useName=col==='Nombre';
+  const key=x=>useName?x.d.replace(/\s*\*+$/,'').trim():x.c;
+  const valid=ck?[...ck.codigos].sort((a,b)=>(key(b)===c.ejemplo)-(key(a)===c.ejemplo)):[];
+  const srcTxt={anexo:'valor del anexo técnico',catalogo:'código del anexo',caja:'código de la tabla DIAN',formato:'ejemplo ilustrativo'}[c.ejemploFuente]||'';
+  const pending=cats.length&&!cats.some(k=>k.codigos.length);
+  return `<div class="dsec answer"><h3>Qué debe enviar</h3>
+    <dl class="kv">
+      ${que?`<dt>Qué</dt><dd>${esc(que)}</dd>`:''}
+      ${c.ejemplo?`<dt>${c.literal?'Valor fijo':'Ejemplo'}</dt><dd><span class="ex"><span class="exv">${esc(c.ejemplo)}</span><span class="exs">${srcTxt}</span></span></dd>`:''}
+      ${cuando?`<dt>Cuándo</dt><dd>${esc(cuando)}</dd>`:''}
+      ${falla?`<dt>Si falla</dt><dd>${esc(falla[0].toUpperCase()+falla.slice(1))}</dd>`:''}
+    </dl>
+    ${casos.map(s=>`<div class="special"><b>Caso especial del anexo.</b> ${esc(s)}</div>`).join('')}
+    ${otros.map(s=>`<p class="small">${esc(s)}</p>`).join('')}
+    ${valid.length?`<div class="vals"><span class="small">${valid.length<=12?'Valores válidos':'Algunos de los '+valid.length+' valores válidos'}${useName?' (se envía el nombre)':''}:</span>${valid.slice(0,12).map(x=>`<span class="vchip${key(x)===c.ejemplo?' on':''}"><b>${esc(useName?x.d:x.c)}</b>${useName?'':' '+esc(x.d)}</span>`).join('')}</div>`:''}
+    ${pending?`<p class="small">Los códigos de la tabla ${esc(cats[0].tabla)} aún no están cargados en la herramienta.</p>`:''}
+    ${cats.length?`<div class="meta">${cats.map(k=>`<button class="textlink" type="button" data-cat="${k.id}">Ver catálogo ${esc(k.nombre)} (${esc(k.tabla)})</button>`).join('')}</div>`:''}
+    <div class="code"><button class="copy" type="button" data-copy="${esc(c.xml)}" data-what="Fragmento XML">Copiar XML</button><pre>${esc(c.xml)}</pre></div>
+  </div>`;
+}
+function structure(c){
+  if(!c._node||!c._node.kids.size) return '';
+  const rows=[]; const condObs=f=>/^Opcional en general/.test(f.obligNota||'');
+  const walk=(n,depth,req)=>n.kids.forEach(k=>{const f=k.fields[0]; const r=f?(req&&/^[12]\.\./.test(f.oc||'')):req;
+    if(f) rows.push({f,depth,rel:r?'Obligatorio':(condObs(f)?'Condicional':'Opcional')}); walk(k,depth+(f?1:0),r);});
+  walk(c._node,0,true);
+  const nReq=rows.filter(r=>r.rel==='Obligatorio').length;
+  const only=state.reqOnly===null?rows.length>12:state.reqOnly; state._onlyShown=only;
+  const vis=only?rows.filter(r=>r.rel==='Obligatorio'):rows;
+  const lead=c.obligEf==='Obligatorio'?`Este grupo siempre se envía y debe incluir ${nReq} de sus ${rows.length} campos.`:`Este grupo es ${c.obligEf.toLowerCase()}. Si lo envía, debe incluir ${nReq} de sus ${rows.length} campos.`;
+  return `<div class="dsec"><h3><span>Contenido del grupo</span><span>${nReq} obligatorios</span></h3>
+    <p style="margin:0;font-size:14px">${lead}</p>
+    <div class="tree2">${vis.map(r=>`<button class="trow" type="button" data-goto="${r.f.id}"><span class="nm">${'<span class="ind"></span>'.repeat(r.depth)}${esc(r.f.nombre)}</span><span class="meta">${stBadge(r.rel)}${ruleBadges(r.f._nR,r.f._nN,true)}</span></button>`).join('')}</div>
+    ${rows.length>nReq?`<button class="textlink" type="button" data-reqonly="1">${only?`Mostrar también los ${rows.length-nReq} condicionales y opcionales`:'Mostrar solo los obligatorios'}</button>`:''}
+    <p class="small">«Obligatorio» aquí significa obligatorio dentro de este grupo.</p>
+  </div>`;
+}
+function renderDetail(){
+  const el=$('#detail'); const c=byId.get(state.sel);
+  if(!c){el.innerHTML='<div class="empty"><b>Seleccione un campo</b>Su ficha aparecerá aquí.</div>';return;}
+  const rules=c._rules.map(r=>`<div class="rule${state.hitRule===r.id?' hit':''}" id="r-${r.id}">
+      <div class="rtop"><span class="rcode">${hl(r.id)}</span>${r.efecto==='R'?`<span class="rb r">${ICON_R}Rechazo</span>`:r.efecto==='N'?`<span class="rb n">${ICON_N}Notificación</span>`:'<span class="small">Sin efecto indicado en el anexo</span>'}<span class="small">pág. ${r.pag}</span></div>
+      <p class="rtext">${hl(r.regla)}</p>
+      ${r.mensaje?`<p class="rmsg"><b>Mensaje</b>${hl(r.mensaje)}</p>`:''}
+    </div>`).join('');
+  const parent=(()=>{const segs=c.xpath.split('/').filter(Boolean);if(segs.length<2)return null;const n=findNode('/'+segs.slice(0,-1).join('/'));return n&&n.fields[0]||null;})();
+  el.innerHTML=`
+    <div class="dhead">
+      <div class="dtop"><div class="crumbs" aria-label="Ubicación">${crumbs(c)}</div><button class="btn dclose" type="button" id="dclose">Cerrar</button></div>
+      <h2 class="dname">${nameHtml(c.nombre)}</h2>
+      ${c.desc?`<p class="ddesc">${hl(c.desc)}</p>`:''}
+      <div class="meta">${stBadge(c.obligEf,c.obligNota)}${ruleBadges(c._nR,c._nN)}<span class="rid">${esc(c.id)} · ${esc(c.tipoTxt)}</span></div>
+    </div>
+    ${c.tipo==='G'?structure(c):''}
+    ${answer(c)}
+    ${c.notas.length?`<div class="dsec"><h3>Inconsistencia del anexo</h3>${c.notas.map(n=>`<div class="note">${esc(n)}</div>`).join('')}</div>`:''}
+    <div class="dsec"><h3><span>Reglas de validación</span><span>${c._rules.length}</span></h3>
+      ${rules||'<p class="small">El anexo no define reglas propias para este campo.</p>'}
+    </div>
+    <details class="tech"><summary>Detalle técnico del anexo</summary><div class="inner">
+      <div class="xp"><code>${esc(c.xpath)}</code><button class="copy" type="button" data-copy="${esc(c.xpath)}">Copiar</button></div>
+      ${c.xpathAnexo!==c.xpath?`<p class="small">XPath tal como aparece en el anexo: <code>${esc(c.xpathAnexo)}</code></p>`:''}
+      <dl class="specs">
+        <div><dt>Tipo</dt><dd>${esc(c.tipoTxt||'—')}</dd></div>
+        <div><dt>Formato</dt><dd>${esc(c.formatoTxt||c.formato||'—')}</dd></div>
+        <div><dt>Tamaño</dt><dd class="mono">${esc(c.tam||'—')}</dd></div>
+        <div><dt>Ocurrencia</dt><dd class="mono">${esc(c.oc||'—')}</dd></div>
+        <div><dt>Padre</dt><dd>${parent?`<button class="textlink" type="button" data-goto="${parent.id}">${esc(parent.nombre)}</button>`:esc(c.padre||'—')}</dd></div>
+        <div><dt>Página</dt><dd>${c.pag}</dd></div>
+      </dl>
+      ${c.obs?`<div><span class="label">Observaciones del anexo</span><p class="obs">${hl(c.obs)}</p></div>`:''}
+    </div></details>`;
+  if(state.hitRule){const r=document.getElementById('r-'+state.hitRule); if(r) r.scrollIntoView({block:'nearest'});}
+}
+
+/* ---------- Acciones ---------- */
+function select(id,{open=true,scroll=false}={}){
+  if(!byId.has(id)) return;
+  if(state.sel!==id) state.reqOnly=state.reqOnly===true&&byId.get(id).tipo==='G'?true:null;
+  state.sel=id; const c=byId.get(id); state.hitRule=findHitRule(c);
+  expandTo(c); render(); renderDetail(); $('#detail').scrollTop=0;
+  if(open&&matchMedia('(max-width:900px)').matches) $('#detail').classList.add('open');
+  if(scroll){const r=document.querySelector(`#list [data-id="${id}"]`); if(r) r.scrollIntoView({block:'nearest'});}
+  try{history.replaceState(null,'','#'+id);}catch(e){}
+}
+function setView(v){state.view=v;['vXml','vLista','vCat'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat'}[i]===v)));try{localStorage.setItem('anexo-vista2',v);}catch(e){}render();}
+function setSec(sec){
+  state.sec=sec; if($('#secSel')) $('#secSel').value=sec; document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.sec===sec)));
+  if(state.view==='cat') setView('xml');
+  if(sec){state.reqOnly=true; const root=ROOTS[sec]; state.expanded=new Set(['/Invoice']); if(byId.has(root)){const r=byId.get(root); expandTo(r); state.expanded.add(r.xpath);} select(byId.has(root)?root:results()[0].id,{scroll:true});}
+  else {state.expanded=new Set(['/Invoice']); render();}
+}
+function setOblig(v){state.oblig=v; document.querySelectorAll('#segOblig button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.oblig===v))); render();}
+function syncMore(){const n=['tipo','regla','valor'].filter(k=>state[k]).length; $('#moreCount').hidden=!n; $('#moreCount').textContent=n; document.querySelectorAll('.chip[data-f]').forEach(b=>b.setAttribute('aria-pressed',String(state[b.dataset.f]===b.dataset.v)));}
+function onQ(){
+  state.q=$('#q').value.trim(); $('#clear').hidden=!state.q; render();
+  const ts=terms(), r=state.view==='cat'?[]:results();
+  if(ts.length===1&&/^f[a-z]{2}\d{2,3}[a-z]?\d?$/.test(ts[0])&&r[0]) select(r[0].id,{open:false,scroll:true});
+  else if(state.sel){const c=byId.get(state.sel); state.hitRule=c?findHitRule(c):null; renderDetail();}
+}
+function openCat(id){state.selCat=id; $('#detail').classList.remove('open'); setView('cat'); const el=document.getElementById('cat-'+id); if(el) el.scrollIntoView({block:'start'}); try{history.replaceState(null,'','#cat-'+id);}catch(e){}}
+
+function wire(){
+  const tabs=$('#tabs');
+  TAB_ORDER.forEach(id=>{const s=id?secById.get(id):null; if(id&&!s) return; const b=document.createElement('button');b.className='tab';b.type='button';b.setAttribute('role','tab');b.dataset.sec=id;b.setAttribute('aria-selected',String(id===''));b.textContent=s?s.nombre:'Factura completa';b.addEventListener('click',()=>setSec(id));tabs.appendChild(b);});
+  const ss=$('#secSel'); TAB_ORDER.forEach(id=>{const sx=id?secById.get(id):null; if(id&&!sx) return; const o=document.createElement('option'); o.value=id; o.textContent=sx?sx.nombre:'Factura completa'; ss.appendChild(o);}); ss.addEventListener('change',()=>setSec(ss.value));
+  document.querySelectorAll('#segOblig button').forEach(b=>b.addEventListener('click',()=>setOblig(b.dataset.oblig)));
+  $('#moreBtn').addEventListener('click',()=>{const o=$('#more').hidden; $('#more').hidden=!o; $('#moreBtn').setAttribute('aria-expanded',String(o));});
+  document.querySelectorAll('.chip[data-f]').forEach(b=>b.addEventListener('click',()=>{const f=b.dataset.f; state[f]=state[f]===b.dataset.v?'':b.dataset.v; syncMore(); render();}));
+  const hints=$('#hints'); HINTS.forEach(h=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=h;b.addEventListener('click',()=>{$('#q').value=h;onQ();});hints.appendChild(b);});
+  let t=null; $('#q').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(onQ,100);});
+  $('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&state.view!=='cat'){const r=results(); if(r[0]) select(r[0].id,{scroll:true});}});
+  $('#clear').addEventListener('click',()=>{$('#q').value='';onQ();$('#q').focus();});
+  $('#vXml').addEventListener('click',()=>setView('xml'));
+  $('#vLista').addEventListener('click',()=>setView('lista'));
+  $('#vCat').addEventListener('click',()=>setView('cat'));
+  $('#list').addEventListener('click',e=>{
+    const fold=e.target.closest('[data-fold]'); if(fold){const p=fold.dataset.fold; state.expanded.has(p)?state.expanded.delete(p):state.expanded.add(p); render(); return;}
+    const xa=e.target.closest('[data-xall]'); if(xa){ if(xa.dataset.xall==='open'){const walk=n=>{if(elemKids(n).length){state.expanded.add(n.path); n.kids.forEach(walk);}}; walk(TREE);} else state.expanded=new Set(['/Invoice']); render(); return;}
+    const go=e.target.closest('[data-goto]'); if(go){select(go.dataset.goto); return;}
+    const at=e.target.closest('.attr[data-id]'); if(at){select(at.dataset.id); return;}
+    const ln=e.target.closest('[data-id]'); if(ln) select(ln.dataset.id);
+  });
+  $('#detail').addEventListener('click',e=>{
+    const g=e.target.closest('[data-goto]'); if(g){select(g.dataset.goto,{scroll:true}); return;}
+    const ct=e.target.closest('[data-cat]'); if(ct){openCat(ct.dataset.cat); return;}
+    const cp=e.target.closest('[data-copy]'); if(cp){copy(cp.dataset.copy,cp.dataset.what); return;}
+    const rq=e.target.closest('[data-reqonly]'); if(rq){state.reqOnly=!state._onlyShown; renderDetail(); return;}
+    if(e.target.closest('#dclose')) $('#detail').classList.remove('open');
+  });
+  $('#aboutBtn').addEventListener('click',()=>{try{$('#about').showModal();}catch(e){$('#about').setAttribute('open','');}});
+  $('#aboutClose').addEventListener('click',()=>$('#about').close());
+  document.addEventListener('keydown',e=>{
+    if(e.key==='/'&&!e.target.closest('input,select,textarea')){e.preventDefault();$('#q').focus();}
+    if(e.key==='Escape') $('#detail').classList.remove('open');
+  });
+}
+function start(data){
+  D=data;
+  D.reglas.forEach(r=>ruleById.set(r.id,r)); D.secciones.forEach(s=>secById.set(s.id,s)); (D.catalogos||[]).forEach(k=>catById.set(k.id,k));
+  index(); buildTree(); state.expanded.add('/Invoice');
+  wire();
+  $('#homeBtn').addEventListener('click',()=>{ $('#q').value=''; state.q=''; $('#clear').hidden=true; setOblig(''); setSec(''); window.scrollTo({top:0}); });
+  $('#hfacts').innerHTML=`<span><b>${D.campos.filter(c=>c.obligEf==='Obligatorio').length}</b> campos siempre obligatorios de ${D.campos.length}</span><span><b>${D.reglas.filter(r=>r.efecto==='R').length}</b> reglas de rechazo</span><span><b>${D.reglas.filter(r=>r.efecto==='N').length}</b> de notificación</span><span><b>${D.catalogos.length}</b> catálogos</span><span>Herramienta no oficial</span>`;
+  try{const v=localStorage.getItem('anexo-vista2'); if(v==='lista'||v==='xml') state.view=v;}catch(e){}
+  const raw=(location.hash||'').slice(1);
+  if(raw.startsWith('cat-')&&catById.has(raw.slice(4))){state.view='cat';state.selCat=raw.slice(4);}
+  ['vXml','vLista','vCat'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat'}[i]===state.view)));
+  const h=raw.toUpperCase(); const first=byId.has(h)?h:'FAD06';
+  select(first,{open:byId.has(h),scroll:true});
+  if(state.view==='cat'&&state.selCat){const el=document.getElementById('cat-'+state.selCat); if(el) el.scrollIntoView({block:'start'});}
+}
+fetch('data/factura-venta.json').then(r=>{if(!r.ok) throw new Error(r.status); return r.json();}).then(start).catch(err=>{
+  console.error(err);
+  $('#list').innerHTML='<div class="empty"><b>No se pudieron cargar los datos</b>Revise que el archivo data/factura-venta.json esté publicado junto a esta página. Si abrió el archivo desde su computador, sírvalo con un servidor local (por ejemplo: python -m http.server).</div>';
+  $('#psub').textContent='Sin datos';
+});
+})();
+</script>
+
+</body>
+</html>
