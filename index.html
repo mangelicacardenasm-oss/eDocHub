@@ -6,7 +6,22 @@
 <title>eDocHub</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20width%3D%2248%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%23101828%22/%3E%3Cg%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M15%2012.5v21.5%22/%3E%3Cpath%20d%3D%22M15%2015h10%22/%3E%3Cpath%20d%3D%22M15%2024.5h10%22/%3E%3Cpath%20d%3D%22M15%2034h10%22/%3E%3C/g%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2215%22%20r%3D%223%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2224.5%22%20r%3D%223%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2234%22%20r%3D%223.4%22%20fill%3D%22%236f86ff%22/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="eDocHub: explorador no oficial del Anexo Técnico 1.9 de factura electrónica de venta de la DIAN: campos, estructura XML, obligatoriedad, reglas de validación y catálogos de códigos.">
+<meta name="description" content="Qué debe enviar en cada campo de la factura electrónica: estructura XML, obligatoriedad, reglas de validación y códigos de la DIAN, según el anexo técnico v1.9. Herramienta gratuita y no oficial.">
+<link rel="canonical" href="https://mangelicacardenasm-oss.github.io/eDocHub/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="eDocHub">
+<meta property="og:title" content="eDocHub · Qué debe enviar en cada campo de la factura electrónica">
+<meta property="og:description" content="474 campos, 470 reglas de validación y 36 catálogos de la DIAN, organizados campo a campo. Gratis y sin registro.">
+<meta property="og:url" content="https://mangelicacardenasm-oss.github.io/eDocHub/">
+<meta property="og:image" content="https://mangelicacardenasm-oss.github.io/eDocHub/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="eDocHub: qué debe enviar en cada campo de la factura electrónica">
+<meta property="og:locale" content="es_CO">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="eDocHub · Qué debe enviar en cada campo de la factura electrónica">
+<meta name="twitter:description" content="474 campos, 470 reglas de validación y 36 catálogos de la DIAN, organizados campo a campo.">
+<meta name="twitter:image" content="https://mangelicacardenasm-oss.github.io/eDocHub/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -58,6 +73,12 @@ mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
 .tb-actions{display:flex;gap:var(--s4);align-items:center}
 .linkbtn{background:none;border:0;padding:0;color:var(--ink-2);font-size:14px;font-weight:600}
 .linkbtn:hover{color:var(--accent)}
+a.linkbtn{text-decoration:none}
+.share{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);align-items:center}
+.sharebtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule-2);background:var(--paper);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.sharebtn:hover{border-color:var(--accent);color:var(--accent)}
+.reportlink{font-size:13px;color:var(--ink-3)}
+.reportlink:hover{color:var(--accent)}
 
 /* ---------- Cabecera mínima ---------- */
 .hero{display:flex;flex-direction:column;gap:var(--s2);padding-block:var(--s5) var(--s2)}
@@ -295,7 +316,7 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
 <div class="wrap">
   <header class="topbar">
     <button class="brand" type="button" id="homeBtn" aria-label="Ver la factura completa"><svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor"/><g stroke="var(--paper)" stroke-width="3" stroke-linecap="round" fill="none"><path d="M15 12.5v21.5"/><path d="M15 15h10"/><path d="M15 24.5h10"/><path d="M15 34h10"/></g><circle cx="31" cy="15" r="3" fill="var(--paper)"/><circle cx="31" cy="24.5" r="3" fill="var(--paper)"/><circle cx="31" cy="34" r="3.4" fill="var(--mkdot)"/></svg><span class="wm">eDoc<b>Hub</b></span> <small>Factura electrónica · Anexo técnico DIAN v1.9</small></button>
-    <div class="tb-actions"><button class="linkbtn" type="button" id="aboutBtn">Cómo leerlo</button></div>
+    <div class="tb-actions"><button class="linkbtn" type="button" id="aboutBtn">Cómo leerlo</button><a class="linkbtn" href="https://github.com/mangelicacardenasm-oss/eDocHub/issues/new?title=Sugerencia%20para%20eDocHub&body=%C2%BFQu%C3%A9%20buscaba%20y%20qu%C3%A9%20le%20falt%C3%B3%3F%0A%0A" target="_blank" rel="noopener">Enviar comentario</a></div>
   </header>
 
   <div id="app" style="display:flex;flex-direction:column;gap:var(--s5)">
@@ -382,6 +403,7 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
     <p>La vista <b>Estructura XML</b> muestra la factura como un documento XML: cada grupo se abre y se cierra, las líneas verticales unen un grupo con sus campos y los atributos aparecen dentro de su etiqueta. Los valores mostrados son ejemplos.</p>
     <p><b>Fuentes.</b> Campos (sección 6.1, páginas 21 a 110) y reglas (sección 8.2, páginas 375 a 460) extraídos del PDF oficial del anexo 1.9, conservando sus textos. Los códigos de los catálogos vienen de los Excel de la Caja de herramientas DIAN, carpeta «Tablas Referenciadas». Faltan las tablas de países, departamentos, municipios y códigos postales.</p>
     <p>Cuando el anexo tiene una inconsistencia (un XPath, un nombre de campo, un tamaño o una referencia a tabla), la ficha la señala en una nota.</p>
+    <p><b>Comentarios y correcciones.</b> Use «Enviar comentario» arriba, o «Reportar un error en este campo» en cada ficha. Se abren en GitHub y requieren una cuenta gratuita.</p>
     <p class="small">Herramienta no oficial. Verifique siempre contra el anexo técnico vigente publicado por la DIAN.</p>
     <div><button class="btn" type="button" id="aboutClose">Cerrar</button></div>
   </div>
@@ -394,6 +416,7 @@ const $=s=>document.querySelector(s);
 let D=null, TREE=null; const byId=new Map(), ruleById=new Map(), secById=new Map(), catById=new Map();
 const state={q:'',sec:'',oblig:'',tipo:'',regla:'',valor:'',view:'xml',sel:null,selCat:null,hitRule:null,expanded:new Set(),reqOnly:null,_onlyShown:false};
 const HINTS=['CUFE','FAU14','NIT del adquiriente','kilogramo','No fue informado'];
+const SITE='https://mangelicacardenasm-oss.github.io/eDocHub/', REPO='https://github.com/mangelicacardenasm-oss/eDocHub';
 const ROOTS={enc:'FAD01',ext:'FAA02',per:'FAE01',ref:'FAF01',emi:'FAJ01',adq:'FAK01',aut:'FAL01',ent:'FAM01',pag:'FAN01',dto:'FAQ01',imp:'FAS01',ret:'FAT01',tot:'FAU01',lin:'FAV01'};
 const TAB_ORDER=['','enc','ext','emi','adq','lin','imp','ret','tot','pag','dto','ent','ref','per','aut'];
 
@@ -677,6 +700,7 @@ function renderDetail(){
       <h2 class="dname">${nameHtml(c.nombre)}</h2>
       ${c.desc?`<p class="ddesc">${hl(c.desc)}</p>`:''}
       <div class="meta">${stBadge(c.obligEf,c.obligNota)}${ruleBadges(c._nR,c._nN)}<span class="rid">${esc(c.id)} · ${esc(c.tipoTxt)}</span></div>
+      <div class="share"><button class="sharebtn" type="button" data-share="${esc(c.id)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Copiar enlace a este campo</button><a class="reportlink" target="_blank" rel="noopener" href="${REPO}/issues/new?title=${encodeURIComponent('Corrección en '+c.id+' '+c.nombre)}&body=${encodeURIComponent('Campo: '+c.id+' ('+c.xpath+')\nEnlace: '+SITE+'#'+c.id+'\n\n¿Qué está mal o qué falta?\n')}">Reportar un error en este campo</a></div>
     </div>
     ${c.tipo==='G'?structure(c):''}
     ${answer(c)}
@@ -751,6 +775,7 @@ function wire(){
   $('#detail').addEventListener('click',e=>{
     const g=e.target.closest('[data-goto]'); if(g){select(g.dataset.goto,{scroll:true}); return;}
     const ct=e.target.closest('[data-cat]'); if(ct){openCat(ct.dataset.cat); return;}
+    const sh=e.target.closest('[data-share]'); if(sh){copy(SITE+'#'+sh.dataset.share,'Enlace'); return;}
     const cp=e.target.closest('[data-copy]'); if(cp){copy(cp.dataset.copy,cp.dataset.what); return;}
     const rq=e.target.closest('[data-reqonly]'); if(rq){state.reqOnly=!state._onlyShown; renderDetail(); return;}
     if(e.target.closest('#dclose')) $('#detail').classList.remove('open');
