@@ -258,6 +258,26 @@ details.tech .inner{padding:0 var(--s5) var(--s4);display:flex;flex-direction:co
 .small code{font-size:12px;overflow-wrap:anywhere}
 .textlink{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;font-size:13.5px;text-align:left}
 
+/* ---------- Plantilla XML ---------- */
+.tpl{display:flex;flex-direction:column;gap:var(--s4);padding:var(--s4)}
+.tpl-opts{display:flex;flex-direction:column;gap:var(--s3)}
+.tpl-opts .row2{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tchk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule-2);border-radius:999px;padding:4px 12px 4px 8px;font-size:13.5px;color:var(--ink-2);background:var(--paper);cursor:pointer;user-select:none}
+.tchk input{accent-color:var(--accent);margin:0}
+.tchk:has(input:checked){border-color:var(--ink);color:var(--ink)}
+.tpl-bar{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s3);align-items:center;justify-content:space-between}
+.tpl-bar .meta{gap:var(--s2)}
+.pbtn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:6px;padding:7px 14px;font-size:13.5px;font-weight:600}
+.pbtn:hover{background:var(--accent);border-color:var(--accent)}
+.sbtn{border:1px solid var(--rule-2);background:var(--paper);color:var(--ink-2);border-radius:6px;padding:7px 14px;font-size:13.5px;font-weight:600}
+.sbtn:hover{border-color:var(--accent);color:var(--accent)}
+.tplcode{margin:0;border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);overflow:auto;max-height:calc(100vh - 220px);font-family:var(--f-mono);font-size:12.5px;line-height:1.65;padding:var(--s3) var(--s4);white-space:pre}
+.tplcode .c{color:var(--ink-3);font-style:italic}
+.tplcode .tg{color:var(--tag)}
+.tplcode .at{color:var(--attr)}
+.tplcode .vl{color:var(--val)}
+.tplwarn{border-left:3px solid var(--not);background:var(--not-soft);padding:var(--s2) var(--s3);font-size:13.5px;border-radius:0 var(--r) var(--r) 0;margin:0}
+
 /* ---------- Catálogos ---------- */
 .cat{padding:var(--s5) var(--s4);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s3);scroll-margin-top:44px}
 .cat.sel{background:var(--sel)}
@@ -373,6 +393,7 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
           <button class="vtab" type="button" id="vXml" aria-pressed="true">Estructura XML</button>
           <button class="vtab" type="button" id="vLista" aria-pressed="false">Lista</button>
           <button class="vtab" type="button" id="vCat" aria-pressed="false">Catálogos</button>
+          <button class="vtab" type="button" id="vTpl" aria-pressed="false">Plantilla XML</button>
         </div>
       </div>
       <div class="legend" id="legend">
@@ -522,6 +543,12 @@ function panelHead(rs){
   const pool=D.campos.filter(c=>!state.sec||c.seccion===state.sec);
   const nReq=pool.filter(c=>c.obligEf==='Obligatorio').length, nCond=pool.filter(c=>c.obligEf==='Condicional').length;
   let title, sub;
+  if(state.view==='tpl'){
+    const n=D.campos.filter(c=>c.obligEf==='Obligatorio').length;
+    $('#ptitle').textContent='Plantilla de factura con los campos siempre obligatorios';
+    $('#psub').textContent='Parte de la estructura mínima del anexo y agregue los grupos que use su operación.';
+    $('#legend').hidden=true; return;
+  }
   if(state.view==='cat'){
     const conCod=D.catalogos.filter(k=>k.codigos.length).length;
     title=`${D.catalogos.length} catálogos de códigos, ${conCod} con sus códigos cargados`;
@@ -623,8 +650,103 @@ function renderCats(){
   return `<div class="list">${fac.length?`<div class="secthead"><span>Usados por la factura de venta</span><span>${fac.length}</span></div>${fac.map(card).join('')}`:''}${otr.length?`<div class="secthead"><span>Otros documentos y servicios</span><span>${otr.length}</span></div>${otr.map(card).join('')}`:''}</div>`;
 }
 
+/* ---------- Plantilla XML ---------- */
+const TPL_OPTS=[
+  {id:'tax',lab:'Tributos (IVA, INC…)',paths:['/Invoice/cac:TaxTotal','/Invoice/cac:InvoiceLine/cac:TaxTotal','/Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent','/Invoice/cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent'],hint:true},
+  {id:'ret',lab:'Retenciones',paths:['/Invoice/cac:WithholdingTaxTotal','/Invoice/cac:InvoiceLine/cac:WithholdingTaxTotal','/Invoice/cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent','/Invoice/cac:InvoiceLine/cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent']},
+  {id:'dto',lab:'Descuentos y cargos',paths:['/Invoice/cac:AllowanceCharge']},
+  {id:'per',lab:'Periodo de facturación',paths:['/Invoice/cac:InvoicePeriod']},
+  {id:'ord',lab:'Orden de pedido',paths:['/Invoice/cac:OrderReference']},
+  {id:'ent',lab:'Entrega',paths:['/Invoice/cac:Delivery']},
+  {id:'fx',lab:'Tasa de cambio',paths:['/Invoice/cac:PaymentExchangeRate']},
+];
+const NS='xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"\n         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"\n         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"\n         xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"\n         xmlns:sts="dian:gov:co:facturaelectronica:Structures-2-1"\n         xmlns:ds="http://www.w3.org/2000/09/xmldsig#"\n         xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"\n         xmlns:xades141="http://uri.etsi.org/01903/v1.4.1#"';
+const tplState={opts:new Set(),comments:true};
+const xesc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const TPL_TAX={ // montos coherentes cuando se agregan tributos (IVA 19 % sobre 1105.13)
+  '/Invoice/cac:TaxTotal/cbc:TaxAmount':'209.97','/Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxableAmount':'1105.13','/Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount':'209.97','/Invoice/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent':'19.00',
+  '/Invoice/cac:InvoiceLine/cac:TaxTotal/cbc:TaxAmount':'209.97','/Invoice/cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxableAmount':'1105.13','/Invoice/cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount':'209.97','/Invoice/cac:InvoiceLine/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent':'19.00',
+  '/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount':'1315.10','/Invoice/cac:LegalMonetaryTotal/cbc:PayableAmount':'1315.10'};
+const TPL_RET={'/Invoice/cac:WithholdingTaxTotal/cbc:TaxAmount':'27.63','/Invoice/cac:WithholdingTaxTotal/cac:TaxSubtotal/cbc:TaxableAmount':'1105.13','/Invoice/cac:WithholdingTaxTotal/cac:TaxSubtotal/cbc:TaxAmount':'27.63','/Invoice/cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent':'2.50',
+  '/Invoice/cac:InvoiceLine/cac:WithholdingTaxTotal/cbc:TaxAmount':'27.63','/Invoice/cac:InvoiceLine/cac:WithholdingTaxTotal/cac:TaxSubtotal/cbc:TaxableAmount':'1105.13','/Invoice/cac:InvoiceLine/cac:WithholdingTaxTotal/cac:TaxSubtotal/cbc:TaxAmount':'27.63','/Invoice/cac:InvoiceLine/cac:WithholdingTaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent':'2.50'};
+function tplValue(f){
+  if(f&&tplState.opts.has('tax')&&TPL_TAX[f.xpath]) return TPL_TAX[f.xpath];
+  if(f&&tplState.opts.has('ret')&&TPL_RET[f.xpath]) return TPL_RET[f.xpath];
+  if(f&&f.ejemplo) return f.ejemplo;
+  if(!f) return '';
+  const d=(f.desc||f.campo||'').replace(/\s+/g,' ').trim();
+  return '['+f.id+(d?': '+(d.length>48?d.slice(0,46)+'…':d):'')+']';
+}
+function buildTemplate(){
+  const forced=new Set(); TPL_OPTS.forEach(o=>{if(tplState.opts.has(o.id)) o.paths.forEach(p=>forced.add(p));});
+  const lines=[]; const used=new Set();
+  const isReq=(f,path,req)=>req&&(f?(/^[12]\.\./.test(f.oc||'')||forced.has(path)):true);
+  const comment=(f,ind)=>{ if(tplState.comments&&f){ const d=(f.desc||'').replace(/\s+/g,' ').trim(); lines.push(`${ind}<!-- ${f.id}${d?' · '+(d.length>70?d.slice(0,68)+'…':d):''} -->`.replace(/--(?!>)(?<!<!--)/g,'–'));} };
+  function attrsOf(n,req){
+    return attrKids(n).map(a=>{const f=a.fields[0]; if(!isReq(f,a.path,req)&&a.seg!=='@currencyID') return ''; if(f) used.add(f.id); return ` ${a.seg.slice(1)}="${xesc(tplValue(f))}"`;}).join('');
+  }
+  function emit(n,depth,req,only){
+    const f=n.fields[0]; const ind='  '.repeat(depth);
+    if(!isReq(f,n.path,req)) return;
+    if(f) used.add(f.id);
+    let ek=elemKids(n);
+    if(only) ek=ek.filter(k=>only.includes(k.seg));
+    // UBLExtension: dos bloques, uno para la DIAN y otro para la firma
+    if(n.path==='/Invoice/ext:UBLExtensions'){
+      comment(f,ind); lines.push(`${ind}<ext:UBLExtensions>`);
+      const ux=n.kids.get('ext:UBLExtension');
+      if(ux){ const ec=ux.kids.get('ext:ExtensionContent');
+        lines.push(`${ind}  <ext:UBLExtension>`,`${ind}    <ext:ExtensionContent>`);
+        if(ec&&ec.kids.get('sts:DianExtensions')) emit(ec.kids.get('sts:DianExtensions'),depth+3,true);
+        lines.push(`${ind}    </ext:ExtensionContent>`,`${ind}  </ext:UBLExtension>`);
+        lines.push(`${ind}  <ext:UBLExtension>`,`${ind}    <ext:ExtensionContent>`,
+          `${ind}      <!-- FAC03 · Firma digital XAdES: la genera el software al firmar el documento (numeral 6.5.10 y capítulo 10 del anexo). -->`,
+          `${ind}      <ds:Signature Id="[ID de la firma]"/>`,
+          `${ind}    </ext:ExtensionContent>`,`${ind}  </ext:UBLExtension>`);
+        ['FAB01','FAB02','FAC01','FAC02','FAC03'].forEach(x=>used.add(x)); }
+      lines.push(`${ind}</ext:UBLExtensions>`); return;
+    }
+    const kids=ek.filter(k=>{const kf=k.fields[0]; return isReq(kf,k.path,true);});
+    if(n.path==='/Invoice'){
+      lines.push('<?xml version="1.0" encoding="UTF-8" standalone="no"?>');
+      lines.push(`<Invoice ${NS}>`); kids.forEach(k=>emit(k,1,true)); lines.push('</Invoice>'); return;
+    }
+    comment(f,ind);
+    const at=attrsOf(n,true);
+    if(kids.length){ lines.push(`${ind}<${n.seg}${at}>`); kids.forEach(k=>emit(k,depth+1,true)); lines.push(`${ind}</${n.seg}>`); }
+    else if(f&&f.tipo==='G'){ lines.push(`${ind}<${n.seg}${at}/>`); }
+    else lines.push(`${ind}<${n.seg}${at}>${xesc(tplValue(f))}</${n.seg}>`);
+  }
+  emit(TREE,0,true);
+  return {xml:lines.join('\n'),count:used.size};
+}
+function hlXml(x){
+  return esc(x)
+    .replace(/(&lt;!--[\s\S]*?--&gt;)/g,'<span class="c">$1</span>')
+    .replace(/(&lt;\/?)([\w:]+)/g,'$1<span class="tg">$2</span>')
+    .replace(/ ([\w:]+)=(&quot;)(.*?)(&quot;)/g,' <span class="at">$1</span>=<span class="vl">$2$3$4</span>')
+    .replace(/(&gt;)([^&<\n][^<\n]*?)(&lt;\/)/g,'$1<span class="vl">$2</span>$3');
+}
+function renderTpl(){
+  const {xml,count}=buildTemplate();
+  const canDownload=/github\.io$|localhost|127\.0\.0\.1/.test(location.hostname);
+  return `<div class="tpl">
+    <div class="tpl-opts">
+      <span class="label">Agregar grupos opcionales</span>
+      <div class="row2">${TPL_OPTS.map(o=>`<label class="tchk"><input type="checkbox" data-topt="${o.id}" ${tplState.opts.has(o.id)?'checked':''}>${esc(o.lab)}</label>`).join('')}</div>
+      <p class="small">La mayoría de las facturas con IVA necesitan el grupo «Tributos», aunque el anexo lo marque como opcional.</p>
+      <div class="row2"><label class="tchk"><input type="checkbox" data-tcom ${tplState.comments?'checked':''}>Comentarios con el ID y la descripción de cada campo</label></div>
+    </div>
+    <div class="tpl-bar"><span class="small"><b style="color:var(--ink)">${count}</b> campos en la plantilla · Los valores entre corchetes debe completarlos usted.</span>
+      <span class="meta"><button class="pbtn" type="button" data-tplcopy>Copiar XML</button>${canDownload?'<button class="sbtn" type="button" data-tpldl>Descargar .xml</button>':''}</span></div>
+    <pre class="tplcode" aria-label="Plantilla XML de factura electrónica">${hlXml(xml)}</pre>
+    <p class="tplwarn"><b>Es una plantilla, no una factura lista para enviar.</b> Le faltan la firma digital y el CUFE calculado. Los montos de ejemplo cuadran con los campos obligatorios, los tributos (IVA del 19 %) y las retenciones; si agrega descuentos, recalcule los totales. El orden de los elementos sigue el anexo: valide el resultado contra el esquema UBL 2.1 y el anexo técnico vigente.</p>
+  </div>`;
+}
+
 /* ---------- Render principal ---------- */
 function render(){
+  if(state.view==='tpl'){panelHead([]); $('#list').innerHTML=renderTpl(); return;}
   const rs=state.view==='cat'?[]:results();
   panelHead(rs);
   const list=$('#list');
@@ -734,7 +856,7 @@ function select(id,{open=true,scroll=false}={}){
   if(scroll){const r=document.querySelector(`#list [data-id="${id}"]`); if(r) r.scrollIntoView({block:'nearest'});}
   try{history.replaceState(null,'','#'+id);}catch(e){}
 }
-function setView(v){state.view=v;['vXml','vLista','vCat'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat'}[i]===v)));try{localStorage.setItem('anexo-vista2',v);}catch(e){}render();}
+function setView(v){state.view=v;['vXml','vLista','vCat','vTpl'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat',vTpl:'tpl'}[i]===v)));try{localStorage.setItem('anexo-vista2',v);}catch(e){}render();}
 function setSec(sec){
   state.sec=sec; if($('#secSel')) $('#secSel').value=sec; document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.sec===sec)));
   if(state.view==='cat') setView('xml');
@@ -765,6 +887,15 @@ function wire(){
   $('#vXml').addEventListener('click',()=>setView('xml'));
   $('#vLista').addEventListener('click',()=>setView('lista'));
   $('#vCat').addEventListener('click',()=>setView('cat'));
+  $('#vTpl').addEventListener('click',()=>setView('tpl'));
+  $('#list').addEventListener('change',e=>{
+    const o=e.target.closest('[data-topt]'); if(o){ o.checked?tplState.opts.add(o.dataset.topt):tplState.opts.delete(o.dataset.topt); render(); return; }
+    if(e.target.closest('[data-tcom]')){ tplState.comments=e.target.checked; render(); }
+  });
+  $('#list').addEventListener('click',e=>{
+    if(e.target.closest('[data-tplcopy]')){ copy(buildTemplate().xml,'XML'); return; }
+    if(e.target.closest('[data-tpldl]')){ const blob=new Blob([buildTemplate().xml],{type:'application/xml'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla-factura-electronica.xml'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); }
+  });
   $('#list').addEventListener('click',e=>{
     const fold=e.target.closest('[data-fold]'); if(fold){const p=fold.dataset.fold; state.expanded.has(p)?state.expanded.delete(p):state.expanded.add(p); render(); return;}
     const xa=e.target.closest('[data-xall]'); if(xa){ if(xa.dataset.xall==='open'){const walk=n=>{if(elemKids(n).length){state.expanded.add(n.path); n.kids.forEach(walk);}}; walk(TREE);} else state.expanded=new Set(['/Invoice']); render(); return;}
@@ -794,10 +925,11 @@ function start(data){
   wire();
   $('#homeBtn').addEventListener('click',()=>{ $('#q').value=''; state.q=''; $('#clear').hidden=true; setOblig(''); setSec(''); window.scrollTo({top:0}); });
   $('#hfacts').innerHTML=`<span><b>${D.campos.filter(c=>c.obligEf==='Obligatorio').length}</b> campos siempre obligatorios de ${D.campos.length}</span><span><b>${D.reglas.filter(r=>r.efecto==='R').length}</b> reglas de rechazo</span><span><b>${D.reglas.filter(r=>r.efecto==='N').length}</b> de notificación</span><span><b>${D.catalogos.length}</b> catálogos</span><span>Herramienta no oficial</span>`;
-  try{const v=localStorage.getItem('anexo-vista2'); if(v==='lista'||v==='xml') state.view=v;}catch(e){}
+  try{const v=localStorage.getItem('anexo-vista2'); if(v==='lista'||v==='xml'||v==='tpl') state.view=v;}catch(e){}
   const raw=(location.hash||'').slice(1);
+  if(raw==='plantilla') state.view='tpl';
   if(raw.startsWith('cat-')&&catById.has(raw.slice(4))){state.view='cat';state.selCat=raw.slice(4);}
-  ['vXml','vLista','vCat'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat'}[i]===state.view)));
+  ['vXml','vLista','vCat','vTpl'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat',vTpl:'tpl'}[i]===state.view)));
   const h=raw.toUpperCase(); const first=byId.has(h)?h:'FAD06';
   select(first,{open:byId.has(h),scroll:true});
   if(state.view==='cat'&&state.selCat){const el=document.getElementById('cat-'+state.selCat); if(el) el.scrollIntoView({block:'start'});}
