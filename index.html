@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>eDocHub</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Crect%20width%3D%2248%22%20height%3D%2248%22%20rx%3D%2212%22%20fill%3D%22%23101828%22/%3E%3Cg%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M15%2012.5v21.5%22/%3E%3Cpath%20d%3D%22M15%2015h10%22/%3E%3Cpath%20d%3D%22M15%2024.5h10%22/%3E%3Cpath%20d%3D%22M15%2034h10%22/%3E%3C/g%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2215%22%20r%3D%223%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2224.5%22%20r%3D%223%22%20fill%3D%22%23fff%22/%3E%3Ccircle%20cx%3D%2231%22%20cy%3D%2234%22%20r%3D%223.4%22%20fill%3D%22%236f86ff%22/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -278,6 +278,36 @@ details.tech .inner{padding:0 var(--s5) var(--s4);display:flex;flex-direction:co
 .tplcode .vl{color:var(--val)}
 .tplwarn{border-left:3px solid var(--not);background:var(--not-soft);padding:var(--s2) var(--s3);font-size:13.5px;border-radius:0 var(--r) var(--r) 0;margin:0}
 
+/* ---------- Validador ---------- */
+.val{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s4)}
+.vpriv{margin:0;font-size:13.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.vpriv::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--val);flex:none}
+.vdrop{border:1.5px dashed var(--rule-2);border-radius:var(--r);background:var(--paper)}
+.vdrop.over{border-color:var(--accent);background:var(--accent-soft)}
+#valIn{display:block;width:100%;min-height:200px;max-height:360px;resize:vertical;border:0;background:transparent;padding:var(--s3) var(--s4);font-family:var(--f-mono);font-size:12.5px;line-height:1.55;color:var(--ink);outline:none}
+.vres{display:flex;flex-direction:column;gap:var(--s3);scroll-margin-top:16px}
+.vsum{border-radius:var(--r);padding:var(--s3) var(--s4);display:flex;flex-direction:column;gap:2px;border:1px solid var(--rule)}
+.vsum b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.vsum span{font-size:13px;color:var(--ink-2)}
+.vsum.bad{background:var(--rej-soft);border-color:transparent}
+.vsum.bad b{color:var(--rej)}
+.vsum.warn{background:var(--not-soft);border-color:transparent}
+.vsum.warn b{color:var(--not)}
+.vsum.ok{background:var(--accent-soft);border-color:transparent}
+.vfatal{background:var(--rej-soft);color:var(--ink);border-radius:var(--r);padding:var(--s3) var(--s4);font-size:14px}
+.vlist{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.vf{display:grid;grid-template-columns:170px minmax(0,1fr);gap:var(--s3);padding:var(--s3) var(--s4);border-bottom:1px solid var(--rule);background:var(--paper)}
+.vf:last-child{border-bottom:0}
+.vsev{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;align-self:start;padding:2px 8px;border-radius:4px;justify-self:start}
+.vf.r .vsev{color:var(--rej);background:var(--rej-soft)}
+.vf.n .vsev{color:var(--not);background:var(--not-soft)}
+.vf.a .vsev{color:var(--ink-2);background:var(--canvas);border:1px solid var(--rule)}
+.vbody{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:14px}
+.vbody > span{color:var(--ink-2);font-size:13px;overflow-wrap:anywhere}
+.vmeta{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:2px}
+.vmeta code{font-size:12px;color:var(--ink-3)}
+@media (max-width:560px){.vf{grid-template-columns:minmax(0,1fr)}}
+
 /* ---------- Catálogos ---------- */
 .cat{padding:var(--s5) var(--s4);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s3);scroll-margin-top:44px}
 .cat.sel{background:var(--sel)}
@@ -394,6 +424,7 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
           <button class="vtab" type="button" id="vLista" aria-pressed="false">Lista</button>
           <button class="vtab" type="button" id="vCat" aria-pressed="false">Catálogos</button>
           <button class="vtab" type="button" id="vTpl" aria-pressed="false">Plantilla XML</button>
+          <button class="vtab" type="button" id="vVal" aria-pressed="false">Validar XML</button>
         </div>
       </div>
       <div class="legend" id="legend">
@@ -543,6 +574,11 @@ function panelHead(rs){
   const pool=D.campos.filter(c=>!state.sec||c.seccion===state.sec);
   const nReq=pool.filter(c=>c.obligEf==='Obligatorio').length, nCond=pool.filter(c=>c.obligEf==='Condicional').length;
   let title, sub;
+  if(state.view==='val'){
+    $('#ptitle').textContent='Revise su XML antes de enviarlo a la DIAN';
+    $('#psub').textContent='Campos obligatorios, catálogos, formatos, dígito de verificación, numeración y totales, según el anexo técnico v1.9.';
+    $('#legend').hidden=true; return;
+  }
   if(state.view==='tpl'){
     const n=D.campos.filter(c=>c.obligEf==='Obligatorio').length;
     $('#ptitle').textContent='Plantilla de factura con los campos siempre obligatorios';
@@ -683,7 +719,8 @@ function buildTemplate(){
   const isReq=(f,path,req)=>req&&(f?(/^[12]\.\./.test(f.oc||'')||forced.has(path)):true);
   const comment=(f,ind)=>{ if(tplState.comments&&f){ const d=(f.desc||'').replace(/\s+/g,' ').trim(); lines.push(`${ind}<!-- ${f.id}${d?' · '+(d.length>70?d.slice(0,68)+'…':d):''} -->`.replace(/--(?!>)(?<!<!--)/g,'–'));} };
   function attrsOf(n,req){
-    return attrKids(n).map(a=>{const f=a.fields[0]; if(!isReq(f,a.path,req)&&a.seg!=='@currencyID') return ''; if(f) used.add(f.id); return ` ${a.seg.slice(1)}="${xesc(tplValue(f))}"`;}).join('');
+    return attrKids(n).map(a=>{const f=a.fields[0]; const sn=n.kids.get('@schemeName'); const dv31=a.seg==='@schemeID'&&sn&&sn.fields[0]&&String(tplValue(sn.fields[0]))==='31';
+      if(!isReq(f,a.path,req)&&a.seg!=='@currencyID'&&!dv31) return ''; if(f) used.add(f.id); return ` ${a.seg.slice(1)}="${xesc(tplValue(f))}"`;}).join('');
   }
   function emit(n,depth,req,only){
     const f=n.fields[0]; const ind='  '.repeat(depth);
@@ -744,9 +781,190 @@ function renderTpl(){
   </div>`;
 }
 
+/* ---------- Validador de XML ---------- */
+const NSMAP={'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2':'cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2':'cac','urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2':'ext','dian:gov:co:facturaelectronica:Structures-2-1':'sts','http://www.w3.org/2000/09/xmldsig#':'ds','http://uri.etsi.org/01903/v1.3.2#':'xades','http://uri.etsi.org/01903/v1.4.1#':'xades141'};
+const INV_NS='urn:oasis:names:specification:ubl:schema:xsd:Invoice-2';
+const valState={text:'',res:null,file:''};
+const cname=el=>el.namespaceURI===INV_NS?el.localName:(NSMAP[el.namespaceURI]?NSMAP[el.namespaceURI]+':'+el.localName:(el.prefix?el.prefix+':':'')+el.localName);
+const kidsEl=el=>[...el.children];
+function nitDV(n){const w=[3,7,13,17,19,23,29,37,41,43,47,53,59,67,71]; const d=String(n).replace(/\D/g,''); if(!d||d.length>15) return null; let s=0; [...d].reverse().forEach((c,i)=>s+=Number(c)*w[i]); const r=s%11; return r<2?r:11-r;}
+function maxOc(oc){const m=String(oc||'').match(/\.\.(\d+|N|n)$/); return m?(/^\d+$/.test(m[1])?Number(m[1]):Infinity):Infinity;}
+function catSet(f){
+  const sets=[]; let insensitive=false;
+  (f.cat||[]).forEach(x=>{const k=catById.get(x.cat); if(!k||!k.codigos.length||k.id==='tarifas') return;
+    if(k.id==='productos'&&!['@schemeID','@schemeName'].includes(x.col)) return;
+    if(k.id==='lang') insensitive=true;
+    const useName=x.col==='Nombre'||x.col==='@schemeName';
+    sets.push({k,vals:new Set(k.codigos.map(c=>(useName?c.d:c.c).replace(/\s*\*+\s*$/,'').trim()).map(v=>insensitive?v.toLowerCase():v))});});
+  return {sets,insensitive};
+}
+function decs(tam){const m=String(tam||'').replace(/\s/g,'').match(/p\(?(\d+)(?:[-.]{1,2}(\d+))?\)?/); return m?Number(m[2]||m[1]):null;}
+function lenRange(tam){const t=String(tam||'').replace(/\s/g,'').replace(/\.\./g,'-').replace(':','-'); if(/p/.test(t)) return null; let m=t.match(/^(\d+)-(\d+)$/); if(m){const a=+m[1],b=+m[2]; return a<=b?[a,b]:null;} m=t.match(/^(\d+)$/); return m?[+m[1],+m[1]]:null;}
+function validateXml(text){
+  const out={findings:[],checks:0,note:'',root:''};
+  const add=(sev,f,title,detail,rule)=>out.findings.push({sev,id:f?f.id:null,name:f?f.nombre:'',xpath:f?f.xpath:'',title,detail:detail||'',rule:rule||''});
+  const sevOf=f=>f&&f._nR?'R':(f&&f._nN?'N':'A');
+  let doc=new DOMParser().parseFromString(text,'application/xml');
+  const perr=doc.getElementsByTagName('parsererror')[0];
+  if(perr){const m=(perr.textContent||'').match(/line (\d+) at column (\d+):\s*([^\n]+?)(?:\s*Below is|\n|$)/); out.fatal='El texto no es un XML bien formado'+(m?`: error en la línea ${m[1]}, columna ${m[2]} (${m[3].trim()}).`:'.')+' Revise que todas las etiquetas abran y cierren, y que el archivo esté completo.';return out;}
+  let root=doc.documentElement;
+  if(root.localName==='AttachedDocument'){
+    const ds=[...doc.getElementsByTagNameNS('*','Description')].map(e=>e.textContent).find(t=>/<Invoice[\s>]/.test(t));
+    if(!ds){out.fatal='El archivo es un AttachedDocument, pero no contiene una factura (Invoice) en su interior.';return out;}
+    doc=new DOMParser().parseFromString(ds.trim(),'application/xml');
+    if(doc.getElementsByTagName('parsererror')[0]){out.fatal='La factura dentro del AttachedDocument no es un XML bien formado.';return out;}
+    root=doc.documentElement; out.note='El archivo es un AttachedDocument (el contenedor que se envía al cliente). Se validó la factura que trae adentro.';
+  }
+  out.root=root.localName;
+  if(root.localName==='CreditNote'||root.localName==='DebitNote'){out.fatal=`Es una ${root.localName==='CreditNote'?'nota crédito':'nota débito'}. Por ahora eDocHub valida solo la factura de venta (Invoice); las notas vienen pronto.`;return out;}
+  if(root.localName!=='Invoice'){out.fatal=`El elemento raíz es «${root.localName}». eDocHub valida facturas de venta, cuyo elemento raíz es «Invoice».`;return out;}
+  if(root.namespaceURI!==INV_NS) add('R',byId.get('FAA01'),'El elemento raíz no usa el namespace de UBL 2.1 para facturas',`Debe ser ${INV_NS}.`);
+  const unknown=[];
+  const docCur=(()=>{const e=kidsEl(root).find(e=>cname(e)==='cbc:DocumentCurrencyCode');return e?e.textContent.trim():'';})();
+  function checkValue(f,v,where){
+    if(!f) return; out.checks++; const val=String(v); const t=val.trim();
+    if(t===''){add(sevOf(f),f,'El valor está vacío',where);return;}
+    if(/^\[F[A-Z]{2}\d+/.test(t)){add(sevOf(f),f,'Valor de la plantilla sin completar',`Encontrado: ${t.slice(0,60)}`);return;}
+    if(f.literal&&t!==f.literal.trim()){add(sevOf(f),f,`Debe ser «${f.literal}»`,`Encontrado: «${t.slice(0,80)}»`);}
+    const {sets,insensitive}=catSet(f); let catBad=false;
+    const ex=String(f.ejemplo||'').trim();
+    if(sets.length){
+      const parts=(f.cat||[]).some(x=>x.cat==='resp')?t.split(';').map(s=>s.trim()).filter(Boolean):[t];
+      parts.forEach(p=>{const pv=insensitive?p.toLowerCase():p; if(!sets.some(s=>s.vals.has(pv))){const k=sets[0].k; catBad=true; add(sevOf(f),f,`«${p}» no está en el catálogo ${k.nombre}`,`Tabla ${k.tabla} de la Caja de herramientas DIAN.`);}});
+    }
+    const fm=f.formato;
+    if(/SoftwareSecurityCode$|\/cbc:UUID$/.test(f.xpath)){ if(!/^[0-9a-f]{96}$/i.test(t)) add(sevOf(f),f,'Debe ser un hash SHA-384: 96 caracteres hexadecimales',`Tiene ${t.length} caracteres.`); return; }
+    if(fm==='F'&&!(/^\d{4}-\d{2}-\d{2}$/.test(t)&&!isNaN(Date.parse(t+'T00:00:00Z')))) add(sevOf(f),f,'La fecha debe tener formato AAAA-MM-DD',`Encontrado: «${t}»`);
+    if(fm==='H'&&!/^\d{2}:\d{2}:\d{2}(\.\d+)?-05:00$/.test(t)) add(sevOf(f),f,'La hora debe tener formato hh:mm:ss-05:00 (hora de Colombia)',`Encontrado: «${t}»`);
+    if(fm==='B'&&!/^(true|false)$/.test(t)) add(sevOf(f),f,'Debe ser «true» o «false», en minúsculas',`Encontrado: «${t}»`);
+    const isNum=v=>/^-?\d+(\.\d+)?$/.test(v);
+    if(fm==='N'&&!f.literal&&!(ex&&!isNum(ex))){
+      if(!isNum(t)) add(sevOf(f),f,'Debe ser un número, con punto decimal y sin separador de miles',`Encontrado: «${t}»`);
+      else{ const d=decs(f.tam); const nd=(t.split('.')[1]||'').length; if(d!==null&&nd>d) add(sevOf(f),f,`Tiene ${nd} decimales; el anexo permite hasta ${d}`,`Encontrado: «${t}»`);
+        if(t.startsWith('-')&&!/PayableRoundingAmount$/.test(f.xpath)) add('R',f,'Los valores no pueden ser negativos','El signo lo da el concepto del campo (anexo, numeral 5.2.3).','VLR01'); }
+    }
+    // Tamaño: el anexo da la longitud máxima; se reporta como «Revisar» porque varios tamaños del anexo no coinciden con sus propios ejemplos.
+    if((fm==='A'||fm==='N')&&!catBad&&!f.literal){const lr=lenRange(f.tam); const unit=fm==='N'?'dígitos':'caracteres'; const len=v=>fm==='N'?v.replace(/[-.]/g,'').length:v.length;
+      if(lr&&!(ex&&len(ex)>lr[1])){const L=len(t); if(L>lr[1]) add('A',f,`Tiene ${L} ${unit}; el anexo indica máximo ${lr[1]}`,`Tamaño ${f.tam} en el anexo.`);}}
+  }
+  function walk(el,node,path){
+    const kids=kidsEl(el); const present=new Set(kids.map(cname));
+    // atributos
+    [...el.attributes].forEach(a=>{ if(a.name.startsWith('xmlns')) return; const an=node.kids.get('@'+a.localName); if(an&&an.fields[0]){ present.add('@'+a.localName); checkValue(an.fields[0],a.value,'Atributo '+a.localName); if(a.localName==='currencyID'&&docCur&&a.value!==docCur) add('R',an.fields[0],`La moneda «${a.value}» no coincide con la de la factura «${docCur}»`,'Todos los atributos currencyID deben ser iguales a cbc:DocumentCurrencyCode.','FAD15b'); }});
+    // NIT con DV
+    const sn=el.getAttribute('schemeName'), sid=el.getAttribute('schemeID');
+    if(sn==='31'&&['cbc:CompanyID','cbc:ID','sts:ProviderID','sts:AuthorizationProviderID'].includes(cname(el))&&!path.includes('StandardItemIdentification')){
+      const fa=node.kids.get('@schemeID'); const fid=fa&&fa.fields[0];
+      if(sid===null){ if(fid) add('R',fid,'Falta el dígito de verificación del NIT','Si @schemeName es 31, el DV va en @schemeID.'); }
+      else if(/^\d+$/.test(el.textContent.trim())){ const dv=nitDV(el.textContent.trim()); out.checks++; if(dv!==null&&String(dv)!==sid.trim()) add('R',fid||null,`El DV del NIT ${el.textContent.trim()} debe ser ${dv}, no ${sid}`,'Calculado con el algoritmo de la DIAN (módulo 11).',''); }
+    }
+    if(node.fields[0]&&node.fields[0].tipo!=='G'&&!kids.length) checkValue(node.fields[0],el.textContent,'');
+    // obligatorios dentro de este nodo
+    if(path!=='/Invoice/ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent'&&path!=='/Invoice/ext:UBLExtensions/ext:UBLExtension'){
+      node.kids.forEach((k,seg)=>{const f=k.fields[0]; if(!f) return; if(/^[12]\.\./.test(f.oc||'')&&!present.has(seg)) add(sevOf(f),f,`Falta ${f.tipo==='A'?'el atributo':f.tipo==='G'?'el grupo':'el campo'} obligatorio ${f.nombre}`,`Dentro de ${path.split('/').pop()}.`);});
+    }
+    // hijos
+    const counts={}; kids.forEach(k=>{const n=cname(k); counts[n]=(counts[n]||0)+1;});
+    Object.entries(counts).forEach(([n,c])=>{const kn=node.kids.get(n); const f=kn&&kn.fields[0]; if(f&&c>maxOc(f.oc)&&n!=='ext:UBLExtension') add(sevOf(f),f,`Aparece ${c} veces; el anexo permite máximo ${maxOc(f.oc)}`,`Ocurrencia ${f.oc}.`);});
+    kids.forEach(k=>{const n=cname(k); if(n==='ds:Signature') return; const kn=node.kids.get(n);
+      if(!kn){ unknown.push(path+'/'+n); return; }
+      walk(k,kn,path+'/'+n);});
+  }
+  walk(root,TREE,'/Invoice');
+  // extensiones
+  const has=(q)=>doc.getElementsByTagNameNS(q[0],q[1]).length>0;
+  if(!has(['dian:gov:co:facturaelectronica:Structures-2-1','DianExtensions'])) add('R',byId.get('FAB03'),'Falta el grupo sts:DianExtensions','Debe ir dentro de un ext:UBLExtension.');
+  if(!has(['http://www.w3.org/2000/09/xmldsig#','Signature'])) add('R',byId.get('FAC03'),'Falta la firma digital ds:Signature','Debe ir dentro de un ext:UBLExtension. La genera el software al firmar.');
+  // reglas de cálculo
+  const X=(xp,ctx)=>{ const segs=xp.split('/').filter(Boolean); let cur=[ctx||root]; segs.forEach(s=>{cur=cur.flatMap(e=>kidsEl(e).filter(k=>cname(k)===s));}); return cur; };
+  const num=e=>e?Number(e.textContent.trim()):NaN; const sum=arr=>arr.reduce((a,e)=>a+(Number(e.textContent.trim())||0),0);
+  const eq=(a,b)=>Math.round(a)===Math.round(b);
+  const lines=X('cac:InvoiceLine'); const R2=n=>Number.isFinite(n)?n.toFixed(2):'—';
+  const rule=(id,ok,title,detail)=>{out.checks++; if(!ok){const r=ruleById.get(id); add(r&&r.efecto||'R',byId.get(r&&r.campo)||null,title,detail,id);}};
+  const lc=X('cbc:LineCountNumeric')[0]; if(lc) rule('FAD16',num(lc)===lines.length,`LineCountNumeric dice ${lc.textContent.trim()}, pero hay ${lines.length} ${lines.length===1?'línea':'líneas'}`,'');
+  const lmt=X('cac:LegalMonetaryTotal')[0];
+  if(lmt){
+    const g1=t=>num(X('cbc:'+t,lmt)[0]);
+    const LE=g1('LineExtensionAmount'), TE=g1('TaxExclusiveAmount'), TI=g1('TaxInclusiveAmount'), AT=g1('AllowanceTotalAmount'), CT=g1('ChargeTotalAmount'), PA=g1('PayableAmount');
+    const sLE=sum(lines.flatMap(l=>X('cbc:LineExtensionAmount',l)));
+    if(Number.isFinite(LE)) rule('FAU02',eq(LE,sLE),`LineExtensionAmount (${R2(LE)}) no es la suma de las líneas (${R2(sLE)})`,'');
+    const sTB=sum(lines.flatMap(l=>X('cac:TaxTotal/cac:TaxSubtotal/cbc:TaxableAmount',l)));
+    if(Number.isFinite(TE)&&lines.some(l=>X('cac:TaxTotal',l).length)) rule('FAU04',eq(TE,sTB),`TaxExclusiveAmount (${R2(TE)}) no es la suma de las bases gravables de las líneas (${R2(sTB)})`,'');
+    const sTax=sum(X('cac:TaxTotal/cbc:TaxAmount'));
+    if(Number.isFinite(TI)&&Number.isFinite(LE)) rule('FAU06',eq(LE+sTax,TI),`TaxInclusiveAmount (${R2(TI)}) debería ser LineExtensionAmount + tributos (${R2(LE+sTax)})`,'');
+    const hdrAC=X('cac:AllowanceCharge'); const sA=sum(hdrAC.filter(a=>X('cbc:ChargeIndicator',a)[0]?.textContent.trim()==='false').flatMap(a=>X('cbc:Amount',a))); const sC=sum(hdrAC.filter(a=>X('cbc:ChargeIndicator',a)[0]?.textContent.trim()==='true').flatMap(a=>X('cbc:Amount',a)));
+    if(Number.isFinite(AT)) rule('FAU08',eq(AT,sA),`AllowanceTotalAmount (${R2(AT)}) no es la suma de los descuentos (${R2(sA)})`,'');
+    if(Number.isFinite(CT)) rule('FAU10',eq(CT,sC),`ChargeTotalAmount (${R2(CT)}) no es la suma de los cargos (${R2(sC)})`,'');
+    if(Number.isFinite(PA)){const exp=(Number.isFinite(TI)?TI:0)-(Number.isFinite(AT)?AT:0)+(Number.isFinite(CT)?CT:0); rule('FAU14',eq(PA,exp),`PayableAmount (${R2(PA)}) debería ser ${R2(exp)}`,'Valor bruto más tributos, menos descuentos, más cargos.');}
+  }
+  X('cac:TaxTotal').forEach((tt,i)=>{const a=num(X('cbc:TaxAmount',tt)[0]); const s=sum(X('cac:TaxSubtotal/cbc:TaxAmount',tt)); if(Number.isFinite(a)) rule('FAS02',eq(a,s),`TaxTotal ${i+1}: TaxAmount (${R2(a)}) no es la suma de sus subtotales (${R2(s)})`,'');});
+  lines.forEach((l,i)=>{
+    const id=X('cbc:ID',l)[0]?.textContent.trim()||String(i+1);
+    X('cac:TaxTotal',l).forEach(tt=>{const a=num(X('cbc:TaxAmount',tt)[0]); const s=sum(X('cac:TaxSubtotal/cbc:TaxAmount',tt)); if(Number.isFinite(a)) rule('FAX02',eq(a,s),`Línea ${id}: TaxAmount (${R2(a)}) no es la suma de sus subtotales (${R2(s)})`,'');});
+    const le=num(X('cbc:LineExtensionAmount',l)[0]), q=num(X('cbc:InvoicedQuantity',l)[0]), p=num(X('cac:Price/cbc:PriceAmount',l)[0]), bq=num(X('cac:Price/cbc:BaseQuantity',l)[0])||1;
+    if([le,q,p].every(Number.isFinite)&&!X('cac:PricingReference',l).length){
+      const ac=X('cac:AllowanceCharge',l); const dA=sum(ac.filter(a=>X('cbc:ChargeIndicator',a)[0]?.textContent.trim()==='false').flatMap(a=>X('cbc:Amount',a))); const dC=sum(ac.filter(a=>X('cbc:ChargeIndicator',a)[0]?.textContent.trim()==='true').flatMap(a=>X('cbc:Amount',a)));
+      const e1=q*p/bq-dA+dC, e2=p*bq-dA+dC; out.checks++;
+      if(!eq(le,e1)&&!eq(le,e2)){const r=ruleById.get('FAV06'); add(r?r.efecto:'R',byId.get('FAV06')||byId.get(r&&r.campo),`Línea ${id}: LineExtensionAmount (${R2(le)}) no cuadra con cantidad × precio (${R2(e1)})`,'Cantidad por precio unitario, menos descuentos y más cargos de la línea.','FAV06');}
+    }
+  });
+  // numeración y fechas de la resolución
+  const ic=X('ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sts:DianExtensions/sts:InvoiceControl')[0];
+  const idEl=X('cbc:ID')[0], issue=X('cbc:IssueDate')[0];
+  if(idEl){ const idv=idEl.textContent.trim(); rule('FAD05a',/^[A-Za-z0-9]+$/.test(idv),`El número de factura «${idv}» tiene caracteres no permitidos`,'Solo números y letras, sin espacios ni guiones.');
+    if(ic){ const pre=X('sts:AuthorizedInvoices/sts:Prefix',ic)[0]?.textContent.trim()||''; const from=num(X('sts:AuthorizedInvoices/sts:From',ic)[0]), to=num(X('sts:AuthorizedInvoices/sts:To',ic)[0]);
+      const nstr=pre&&idv.startsWith(pre)?idv.slice(pre.length):idv.replace(/^[A-Za-z]+/,''); const n=Number(nstr);
+      if(Number.isFinite(n)&&Number.isFinite(from)) rule('FAD05b',n>=from,`El consecutivo ${nstr} es menor que el inicio del rango autorizado (${from})`,'');
+      if(Number.isFinite(n)&&Number.isFinite(to)) rule('FAD05c',n<=to,`El consecutivo ${nstr} es mayor que el final del rango autorizado (${to})`,''); } }
+  if(issue&&ic){ const d=issue.textContent.trim(); const s=X('sts:AuthorizationPeriod/cbc:StartDate',ic)[0]?.textContent.trim(), e=X('sts:AuthorizationPeriod/cbc:EndDate',ic)[0]?.textContent.trim();
+    if(s) rule('FAD09a',d>=s,`La fecha de emisión ${d} es anterior al inicio de la autorización (${s})`,''); if(e) rule('FAD09b',d<=e,`La fecha de emisión ${d} es posterior al fin de la autorización (${e})`,''); }
+  if(unknown.length) out.findings.push({sev:'A',id:null,name:'',xpath:'',title:`${unknown.length} elemento${unknown.length>1?'s':''} que no aparece${unknown.length>1?'n':''} en el anexo`,detail:unknown.slice(0,8).join(' · ')+(unknown.length>8?` · y ${unknown.length-8} más`:''),rule:''});
+  const order={R:0,N:1,A:2}; out.findings.sort((a,b)=>order[a.sev]-order[b.sev]);
+  return out;
+}
+function sampleWithErrors(){
+  const keep=new Set(tplState.opts), kc=tplState.comments; tplState.opts=new Set(['tax']); tplState.comments=false;
+  let x=buildTemplate().xml; tplState.opts=keep; tplState.comments=kc;
+  x=x.replace(/<sts:ProviderID([^>]*)>[^<]*</,'<sts:ProviderID$1>900987654<').replace('schemeID="[FAB22: DV del NIT del Proveedor Tecnológico]"','schemeID="5"')
+     .replace(/<sts:softwareID([^>]*)>[^<]*</,'<sts:softwareID$1>56f2ae4e-9812-4fad-9255-08fcfcd5ccb0<')
+     .replace(/<sts:SoftwareSecurityCode([^>]*)>[^<]*</,'<sts:SoftwareSecurityCode$1>'+'a'.repeat(96)+'<')
+     .replace(/<cbc:UUID([^>]*)>[^<]*</,'<cbc:UUID$1>'+'b'.repeat(96)+'<')
+     .replace('<cbc:IssueTime>14:30:00-05:00</cbc:IssueTime>','<cbc:IssueTime>14:30</cbc:IssueTime>')
+     .replace('<cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode>\n','')
+     .replace('<cbc:LineCountNumeric>1</cbc:LineCountNumeric>','<cbc:LineCountNumeric>2</cbc:LineCountNumeric>')
+     .replace('schemeID="8" schemeName="31">900123456<','schemeID="3" schemeName="31">900123456<')
+     .replace('<cbc:TaxLevelCode>O-13</cbc:TaxLevelCode>','<cbc:TaxLevelCode>O-99</cbc:TaxLevelCode>')
+     .replace('unitCode="94">1</cbc:InvoicedQuantity>','unitCode="UNIDAD">1</cbc:InvoicedQuantity>')
+     .replace('<cbc:PayableAmount currencyID="COP">1315.10</cbc:PayableAmount>','<cbc:PayableAmount currencyID="COP">1400.00</cbc:PayableAmount>');
+  return x;
+}
+function renderVal(){
+  const r=valState.res;
+  const SEV={R:['r','Rechazo probable'],N:['n','Notificación probable'],A:['a','Revisar']};
+  let res='';
+  if(r){
+    if(r.fatal) res=`<div class="vres"><div class="vfatal"><b>No se pudo validar.</b> ${esc(r.fatal)}</div></div>`;
+    else{
+      const c={R:0,N:0,A:0}; r.findings.forEach(f=>c[f.sev]++);
+      const head=c.R?`${c.R} ${c.R>1?'problemas harían':'problema haría'} que la DIAN rechace la factura`:c.N?`La factura pasaría, con ${c.N} ${c.N>1?'notificaciones':'notificación'}`:'No se encontraron problemas en las reglas que revisa eDocHub';
+      res=`<div class="vres"><div class="vsum ${c.R?'bad':c.N?'warn':'ok'}"><b>${esc(head)}</b><span>${r.checks} verificaciones · ${c.R} ${c.R===1?'rechazo probable':'rechazos probables'} · ${c.N} ${c.N===1?'notificación':'notificaciones'} · ${c.A} para revisar${valState.file?` · ${esc(valState.file)}`:''}</span></div>
+      ${r.note?`<p class="small">${esc(r.note)}</p>`:''}
+      <div class="vlist">${r.findings.map(f=>`<div class="vf ${SEV[f.sev][0]}"><span class="vsev">${f.sev==='R'?ICON_R:f.sev==='N'?ICON_N:''}${SEV[f.sev][1]}</span><div class="vbody"><b>${esc(f.title)}</b>${f.detail?`<span>${esc(f.detail)}</span>`:''}<span class="vmeta">${f.id?`<button class="textlink" type="button" data-goto="${f.id}">${esc(f.id)} · ${esc(f.name)}</button>`:''}${f.rule&&f.rule!==f.id?`<code>${esc(f.rule)}</code>`:''}</span></div></div>`).join('')}</div>
+      <p class="small">eDocHub revisa estructura, campos obligatorios, ocurrencias, valores fijos, catálogos, formatos, dígito de verificación, numeración y totales. No verifica la firma digital, el CUFE ni los datos que solo conoce la DIAN, como el RUT o la resolución de numeración. La validación oficial la hace la DIAN.</p></div>`;
+    }
+  }
+  return `<div class="val">
+    <p class="vpriv">El XML se revisa en su navegador. No se envía ni se guarda en ningún servidor.</p>
+    <div class="vdrop" id="vdrop"><textarea id="valIn" spellcheck="false" placeholder="Pegue aquí el XML de la factura, o arrastre el archivo .xml a este recuadro. También sirve el AttachedDocument que se envía al cliente.">${esc(valState.text)}</textarea></div>
+    <div class="tpl-bar"><span class="meta"><button class="pbtn" type="button" data-valrun>Validar</button><label class="sbtn" for="valFile" style="cursor:pointer">Abrir archivo .xml</label><input type="file" id="valFile" accept=".xml,text/xml,application/xml" hidden><button class="sbtn" type="button" data-valsample>Probar con un ejemplo con errores</button></span>${valState.text?'<button class="textlink" type="button" data-valclear>Limpiar</button>':''}</div>
+    ${res}
+  </div>`;
+}
+
 /* ---------- Render principal ---------- */
 function render(){
   if(state.view==='tpl'){panelHead([]); $('#list').innerHTML=renderTpl(); return;}
+  if(state.view==='val'){panelHead([]); $('#list').innerHTML=renderVal(); return;}
   const rs=state.view==='cat'?[]:results();
   panelHead(rs);
   const list=$('#list');
@@ -856,7 +1074,7 @@ function select(id,{open=true,scroll=false}={}){
   if(scroll){const r=document.querySelector(`#list [data-id="${id}"]`); if(r) r.scrollIntoView({block:'nearest'});}
   try{history.replaceState(null,'','#'+id);}catch(e){}
 }
-function setView(v){state.view=v;['vXml','vLista','vCat','vTpl'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat',vTpl:'tpl'}[i]===v)));try{localStorage.setItem('anexo-vista2',v);}catch(e){}render();}
+function setView(v){state.view=v;['vXml','vLista','vCat','vTpl','vVal'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat',vTpl:'tpl',vVal:'val'}[i]===v)));try{localStorage.setItem('anexo-vista2',v);}catch(e){}render();}
 function setSec(sec){
   state.sec=sec; if($('#secSel')) $('#secSel').value=sec; document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.sec===sec)));
   if(state.view==='cat') setView('xml');
@@ -888,6 +1106,19 @@ function wire(){
   $('#vLista').addEventListener('click',()=>setView('lista'));
   $('#vCat').addEventListener('click',()=>setView('cat'));
   $('#vTpl').addEventListener('click',()=>setView('tpl'));
+  $('#vVal').addEventListener('click',()=>setView('val'));
+  const runVal=()=>{ valState.text=$('#valIn').value; if(!valState.text.trim()){toast('Pegue un XML o abra un archivo');return;} valState.res=validateXml(valState.text); render(); const r=document.querySelector('.vres'); if(r) r.scrollIntoView({block:'start',behavior:'smooth'}); };
+  const loadFile=f=>{ if(!f) return; if(f.size>8e6){toast('El archivo supera 8 MB');return;} const rd=new FileReader(); rd.onload=()=>{valState.text=String(rd.result); valState.file=f.name; $('#valIn').value=valState.text; runVal();}; rd.readAsText(f); };
+  $('#list').addEventListener('input',e=>{ if(e.target.id==='valIn'){ valState.text=e.target.value; valState.file=''; } });
+  $('#list').addEventListener('change',e=>{ if(e.target.id==='valFile') loadFile(e.target.files[0]); });
+  $('#list').addEventListener('dragover',e=>{ if(e.target.closest('#vdrop')){ e.preventDefault(); e.target.closest('#vdrop').classList.add('over'); } });
+  $('#list').addEventListener('dragleave',e=>{ const d=e.target.closest('#vdrop'); if(d) d.classList.remove('over'); });
+  $('#list').addEventListener('drop',e=>{ const d=e.target.closest('#vdrop'); if(d){ e.preventDefault(); d.classList.remove('over'); loadFile(e.dataTransfer.files[0]); } });
+  $('#list').addEventListener('click',e=>{
+    if(e.target.closest('[data-valrun]')){ runVal(); return; }
+    if(e.target.closest('[data-valsample]')){ valState.text=sampleWithErrors(); valState.file='ejemplo-con-errores.xml'; $('#valIn').value=valState.text; runVal(); return; }
+    if(e.target.closest('[data-valclear]')){ valState.text=''; valState.res=null; valState.file=''; render(); return; }
+  });
   $('#list').addEventListener('change',e=>{
     const o=e.target.closest('[data-topt]'); if(o){ o.checked?tplState.opts.add(o.dataset.topt):tplState.opts.delete(o.dataset.topt); render(); return; }
     if(e.target.closest('[data-tcom]')){ tplState.comments=e.target.checked; render(); }
@@ -928,8 +1159,9 @@ function start(data){
   try{const v=localStorage.getItem('anexo-vista2'); if(v==='lista'||v==='xml'||v==='tpl') state.view=v;}catch(e){}
   const raw=(location.hash||'').slice(1);
   if(raw==='plantilla') state.view='tpl';
+  if(raw==='validar') state.view='val';
   if(raw.startsWith('cat-')&&catById.has(raw.slice(4))){state.view='cat';state.selCat=raw.slice(4);}
-  ['vXml','vLista','vCat','vTpl'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat',vTpl:'tpl'}[i]===state.view)));
+  ['vXml','vLista','vCat','vTpl','vVal'].forEach(i=>$('#'+i).setAttribute('aria-pressed',String({vXml:'xml',vLista:'lista',vCat:'cat',vTpl:'tpl',vVal:'val'}[i]===state.view)));
   const h=raw.toUpperCase(); const first=byId.has(h)?h:'FAD06';
   select(first,{open:byId.has(h),scroll:true});
   if(state.view==='cat'&&state.selCat){const el=document.getElementById('cat-'+state.selCat); if(el) el.scrollIntoView({block:'start'});}
@@ -942,5 +1174,4 @@ fetch('data/factura-venta.json').then(r=>{if(!r.ok) throw new Error(r.status); r
 })();
 </script>
 
-</body>
-</html>
+</body></html>
