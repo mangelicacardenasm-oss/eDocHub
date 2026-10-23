@@ -307,6 +307,22 @@ details.tech .inner{padding:0 var(--s5) var(--s4);display:flex;flex-direction:co
 .vmeta{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:2px}
 .vmeta code{font-size:12px;color:var(--ink-3)}
 @media (max-width:560px){.vf{grid-template-columns:minmax(0,1fr)}}
+.vmap{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper)}
+.vmap summary{cursor:pointer;padding:var(--s3) var(--s4);font-weight:700;font-size:14px;display:flex;gap:8px;align-items:baseline}
+.vmap summary span{font-weight:500;color:var(--ink-3);font-size:12.5px}
+.vmapwrap{overflow-x:auto;border-top:1px solid var(--rule)}
+.vmap table{width:100%;border-collapse:collapse;font-size:13px}
+.vmap th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:700;padding:8px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.vmap td{padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+.vmap tr:last-child td{border-bottom:0}
+.vmap td code{font-size:12px;overflow-wrap:anywhere}
+.vmap td span{display:block;color:var(--ink-3);font-size:12px;margin-top:2px}
+.vmap .vst{font-weight:800;text-align:center;width:28px}
+.vmap tr.ok .vst{color:var(--val)}
+.vmap tr.bad{background:var(--rej-soft)}
+.vmap tr.bad .vst{color:var(--rej)}
+.vmap tr.warn .vst{color:var(--not)}
+@media (max-width:560px){.vmap th:nth-child(2),.vmap td:nth-child(2){display:none}}
 
 /* ---------- Catálogos ---------- */
 .cat{padding:var(--s5) var(--s4);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s3);scroll-margin-top:44px}
@@ -424,7 +440,7 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
           <button class="vtab" type="button" id="vLista" aria-pressed="false">Lista</button>
           <button class="vtab" type="button" id="vCat" aria-pressed="false">Catálogos</button>
           <button class="vtab" type="button" id="vTpl" aria-pressed="false">Plantilla XML</button>
-          <button class="vtab" type="button" id="vVal" aria-pressed="false">Validar XML</button>
+          <button class="vtab" type="button" id="vVal" aria-pressed="false">Validar</button>
         </div>
       </div>
       <div class="legend" id="legend">
@@ -575,8 +591,8 @@ function panelHead(rs){
   const nReq=pool.filter(c=>c.obligEf==='Obligatorio').length, nCond=pool.filter(c=>c.obligEf==='Condicional').length;
   let title, sub;
   if(state.view==='val'){
-    $('#ptitle').textContent='Revise su XML antes de enviarlo a la DIAN';
-    $('#psub').textContent='Campos obligatorios, catálogos, formatos, dígito de verificación, numeración y totales, según el anexo técnico v1.9.';
+    $('#ptitle').textContent='Revise su factura antes de enviarla a la DIAN';
+    $('#psub').textContent='Pegue el XML UBL o el JSON que envía a su proveedor tecnológico. Se revisan obligatorios, catálogos, formatos, dígito de verificación y totales, según el anexo técnico v1.9.';
     $('#legend').hidden=true; return;
   }
   if(state.view==='tpl'){
@@ -922,6 +938,142 @@ function validateXml(text){
   const order={R:0,N:1,A:2}; out.findings.sort((a,b)=>order[a.sev]-order[b.sev]);
   return out;
 }
+/* ---------- Validador de JSON de integración (formato del proveedor tecnológico) ---------- */
+function validateJson(text){
+  const out={findings:[],checks:0,note:'',map:[],kind:'json'};
+  let j; try{ j=JSON.parse(text); }catch(e){ const m=String(e.message).match(/position (\d+)/); let where=''; if(m){const pos=+m[1]; const pre=text.slice(0,pos); where=` en la línea ${pre.split('\n').length}`;} out.fatal=`El texto no es un JSON válido${where}. Revise comas, comillas y llaves.`; return out; }
+  if(!j||typeof j!=='object'||!j.encabezado||!j.pago||!Array.isArray(j.listaDetalle)){ out.fatal='El JSON no tiene la estructura que eDocHub reconoce (encabezado, pago, listaDetalle, listaImpuestos, listaAdquirentes, listaMediosPagos). Si su proveedor usa otra estructura, envíenos un ejemplo con «Enviar comentario».'; return out; }
+  out.note='Se reconoció un JSON de integración con un proveedor tecnológico. El proveedor lo traduce a UBL; cada dato se revisa contra el campo del anexo que alimenta.';
+  const F=id=>byId.get(id)||null;
+  const add=(sev,id,title,detail,rule)=>{const f=F(id); out.findings.push({sev,id:f?f.id:null,name:f?f.nombre:'',title,detail:detail||'',rule:rule||''});};
+  const st=v=>v===undefined||v===null?'':String(v);
+  const N=v=>{const s=st(v).trim(); return s===''?NaN:Number(s);};
+  const fmt=n=>Number.isFinite(n)?n.toLocaleString('es-CO',{maximumFractionDigits:2}):'—';
+  const eq=(a,b)=>Math.abs(a-b)<0.01;
+  const mapRow=(json,val,id,estado,nota)=>out.map.push({json,val:st(val),id,estado:estado||'',nota:nota||''});
+  const inCat=(catId,v,pad)=>{const k=catById.get(catId); if(!k) return null; const s=st(v).trim(); const vals=new Set(k.codigos.map(c=>c.c.replace(/\s*\*+$/,'').trim())); return vals.has(s)||(pad&&vals.has(s.padStart(pad,'0')));};
+  const catName=(catId,v,pad)=>{const k=catById.get(catId); if(!k) return ''; const s=st(v).trim(); const c=k.codigos.find(c=>c.c.replace(/\s*\*+$/,'').trim()===s||(pad&&c.c===s.padStart(pad,'0'))); return c?c.d.replace(/\s*\*+$/,''):'';};
+  // espacios sobrantes y decimales
+  const spaces=[], longDec=[];
+  (function scan(o,p){ if(Array.isArray(o)) o.forEach((x,i)=>scan(x,`${p}[${i}]`)); else if(o&&typeof o==='object') Object.entries(o).forEach(([k,v])=>scan(v,p?p+'.'+k:k)); else if(typeof o==='string'){ if(o!==o.trim()) spaces.push(p); const m=o.trim().match(/^-?\d+\.(\d+)$/); if(m&&m[1].length>6&&/[1-9]/.test(m[1].slice(6))) longDec.push(p); } })(j,'');
+  out.checks++; if(spaces.length) add('A',null,`${spaces.length} ${spaces.length===1?'valor trae':'valores traen'} espacios al inicio o al final`,spaces.slice(0,6).join(' · ')+(spaces.length>6?` · y ${spaces.length-6} más`:'')+'. Es típico de los campos de SAP; si el proveedor no los limpia, el formato numérico puede fallar.');
+  if(longDec.length) add('A',null,'Hay valores con más de 6 decimales significativos','El UBL los redondea. En facturas con muchas líneas, el redondeo puede descuadrar los totales: '+longDec.slice(0,4).join(' · '));
+  const e=j.encabezado, p=j.pago;
+  out.checks++; if(st(e.contrasenia).trim()||st(e.token).trim()) add('A',null,'El JSON incluye usuario, contraseña o token','No comparta así un JSON de producción. eDocHub no envía ni guarda el contenido, pero otras personas o herramientas podrían hacerlo.');
+  // encabezado
+  const td=st(e.tipoDocumento).trim(); out.checks++;
+  const tdOk=inCat('tipodoc',td,2); mapRow('encabezado.tipoDocumento',td,'FAD12',tdOk?'ok':'bad',tdOk?catName('tipodoc',td,2):'');
+  if(td&&!tdOk) add('R','FAD12',`Tipo de documento «${td}» no está en la tabla 13.1.3`,'','FAD12b');
+  const to=st(e.tipoOperacion).trim(); const toOk=inCat('tipoop',to); out.checks++; mapRow('encabezado.tipoOperacion',to,'FAD02',toOk?'ok':'bad',toOk?catName('tipoop',to):'');
+  if(to&&!toOk) add('R','FAD02',`Tipo de operación «${to}» no está en la tabla 13.1.5.1`,'');
+  const pre=st(e.prefijo).trim(), con=st(e.consecutivo).trim(), num=pre+con; out.checks++;
+  const numOk=/^[A-Za-z0-9]+$/.test(num)&&/^\d+$/.test(con);
+  mapRow('encabezado.prefijo + consecutivo',num,'FAD05',numOk?'ok':'bad',pre==='SETP'?'SETP es el prefijo del set de pruebas de habilitación':'');
+  if(!numOk) add('R','FAD05',`El número «${num}» no es válido`,'Prefijo de letras o números y consecutivo numérico, sin espacios ni guiones.','FAD05a');
+  if(num.length>20) add('R','FAD05',`El número «${num}» supera 20 caracteres`,'');
+  const ff=st(e.fechaFacturacion).trim(), fm=ff.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/); out.checks++;
+  mapRow('encabezado.fechaFacturacion',ff,'FAD09',fm?'ok':'bad',fm?`IssueDate ${fm[1]} · IssueTime ${fm[2]}-05:00`:'');
+  if(!fm) add('R','FAD09',`La fecha «${ff}» no tiene el formato AAAA-MM-DDThh:mm:ss`,'');
+  const lines=j.listaDetalle; const cl=N(e.cantidadLineas); out.checks++;
+  mapRow('encabezado.cantidadLineas',e.cantidadLineas,'FAD16',cl===lines.length?'ok':'bad');
+  if(cl!==lines.length) add('R','FAD16',`cantidadLineas dice ${st(e.cantidadLineas).trim()}, pero hay ${lines.length} ${lines.length===1?'línea':'líneas'}`,'','FAD16');
+  // pago
+  const mon=st(p.moneda).trim(); const monOk=inCat('moneda',mon); out.checks++; mapRow('pago.moneda',mon,'FAD15',monOk?'ok':'bad');
+  if(!monOk) add('R','FAD15',`Moneda «${mon}» no está en la tabla 13.3.3`,'');
+  const tc=st(p.tipoCompra).trim(); const tcOk=inCat('formapago',tc); out.checks++; mapRow('pago.tipoCompra',tc,'FAN02',tcOk?'ok':'bad',tcOk?catName('formapago',tc):'');
+  if(!tcOk) add('R','FAN02',`Forma de pago «${tc}» no está en la tabla 13.3.4.1`,'1 = Contado, 2 = Crédito.');
+  const fv=st(p.fechaVencimiento).trim(); out.checks++;
+  if(fv){ const ok=/^\d{4}-\d{2}-\d{2}/.test(fv)&&(!fm||fv.slice(0,10)>=fm[1]); mapRow('pago.fechaVencimiento',fv,'FAN04',ok?'ok':'bad'); if(!ok) add('R','FAN04',`La fecha de vencimiento ${fv.slice(0,10)} no es válida o es anterior a la de facturación`,''); }
+  else if(tc==='2') add('R','FAN04','Falta la fecha de vencimiento','Si la forma de pago es 2 (Crédito), PaymentDueDate es obligatorio.','FAN04');
+  (j.listaMediosPagos||[]).forEach((m,i)=>{const v=st(m.medioPago).trim(); const ok=inCat('mediopago',v); out.checks++; mapRow(`listaMediosPagos[${i}].medioPago`,v,'FAN03',ok?(v==='ZZZ'||v==='1'?'warn':'ok'):'bad',ok?catName('mediopago',v)+(v==='ZZZ'?' · válido, pero genérico':''):''); if(!ok) add('R','FAN03',`Medio de pago «${v}» no está en la tabla 13.3.4.2`,'');});
+  if(!(j.listaMediosPagos||[]).length) add('R','FAN03','Falta el medio de pago','');
+  // líneas
+  let sumNeto=0; const taxLines={};
+  lines.forEach((l,i)=>{
+    const L=`listaDetalle[${i}]`, pos=st(l.posicion).trim()||String(i+1), lab=`Línea ${pos}`;
+    const q=N(l.cantidad), vu=N(l.valorUnitario), neto=N(l.precioSinImpuestos), tot=N(l.precioTotal), vxq=N(l.valorUnitarioPorCantidad);
+    mapRow(L+'.nombreProducto',l.nombreProducto,'FAZ02',st(l.nombreProducto).trim()?'ok':'bad');
+    if(!st(l.nombreProducto).trim()) add('R','FAZ02',`${lab}: falta la descripción del producto`,'');
+    mapRow(L+'.codigoProducto',l.codigoProducto,'FAZ10',st(l.codigoProducto).trim()?'ok':'warn');
+    const tcp=st(l.tipoCodigoProducto).trim(); const tcpOk=inCat('productos',tcp); out.checks++; mapRow(L+'.tipoCodigoProducto',tcp,'FAZ11',tcpOk?'ok':'bad',tcpOk?catName('productos',tcp):'');
+    if(!tcpOk) add('R','FAZ11',`${lab}: estándar de código de producto «${tcp}» no está en la tabla 13.3.5`,'');
+    mapRow(L+'.cantidad',l.cantidad,'FAV04',q>0?'ok':'bad'); out.checks++;
+    if(!(q>0)) add('R','FAV04',`${lab}: la cantidad debe ser mayor que cero`,'');
+    const um=st(l.unidadMedida).trim(); const umOk=inCat('unidades',um); out.checks++;
+    mapRow(L+'.unidadMedida',um,'FAV05',umOk?'ok':'warn',umOk?catName('unidades',um):'No está en la tabla 13.3.6; el proveedor debe homologarla');
+    if(!umOk) add('N','FAV05',`${lab}: la unidad «${um}» no está en la tabla 13.3.6 de la DIAN`,`Es un código interno (de SAP, por ejemplo). Confirme que su proveedor tecnológico lo homologa${um==='UN'?' a 94 (Unidad)':''}; si no, la DIAN genera una notificación.`,'FAV05');
+    mapRow(L+'.valorUnitario',l.valorUnitario,'FBB02',vu>=0?'ok':'bad');
+    const bruto=q*vu;
+    const desc=(l.listaDescuentos||[]), carg=(l.listaCargos||[]);
+    let sD=0; desc.forEach((d,k)=>{const a=N(d.descuento), pc=N(d.porcentajeDescuento); if(Number.isFinite(a)) sD+=a;
+      const cd=st(d.codigoDescuento).trim(); const cdOk=inCat('descuentos',cd); out.checks++;
+      mapRow(`${L}.listaDescuentos[${k}].codigoDescuento`,cd,'FBE04',cdOk?'ok':'bad',cdOk?catName('descuentos',cd):''); if(!cdOk) add('N','FBE04',`${lab}: código de descuento «${cd}» no está en la tabla 13.3.9`,'');
+      mapRow(`${L}.listaDescuentos[${k}].descuento`,d.descuento,'FBE06',Number.isFinite(a)&&a<=bruto?'ok':'bad');
+      mapRow(`${L}.listaDescuentos[${k}].porcentajeDescuento`,d.porcentajeDescuento,'FBE05','');
+      out.checks++; if(Number.isFinite(a)&&a>bruto) add('R','FBE06',`${lab}: el descuento (${fmt(a)}) supera el valor de la línea (${fmt(bruto)})`,'');
+      out.checks++; if(Number.isFinite(pc)&&Number.isFinite(a)&&!eq(bruto*pc/100,a)) add('A','FBE05',`${lab}: el ${fmt(pc)} % de ${fmt(bruto)} es ${fmt(bruto*pc/100)}, no ${fmt(a)}`,'El descuento no cuadra con su porcentaje sobre cantidad × valor unitario.');
+    });
+    let sC=0; carg.forEach(c=>{const a=N(c.cargo??c.valor); if(Number.isFinite(a)) sC+=a;});
+    if(Number.isFinite(vxq)){ out.checks++; const ok=eq(vxq,bruto); mapRow(L+'.valorUnitarioPorCantidad',l.valorUnitarioPorCantidad,'FBE08',ok?'ok':'bad','Base para calcular el descuento (cantidad × valor unitario)');
+      if(!ok) add('A','FBE08',`${lab}: valorUnitarioPorCantidad es ${fmt(vxq)}, pero ${fmt(q)} × ${fmt(vu)} = ${fmt(bruto)}`,`Si el proveedor lo usa como base del descuento (BaseAmount), el descuento del ${fmt(N(desc[0]?.porcentajeDescuento))} % sobre esa base no cuadra con el valor enviado. Revise de qué condición de precio sale este campo en SAP.`); }
+    const expNeto=bruto-sD+sC; out.checks++;
+    mapRow(L+'.precioSinImpuestos',l.precioSinImpuestos,'FAV06',eq(neto,expNeto)?'ok':'bad');
+    if(!eq(neto,expNeto)) add('R','FAV06',`${lab}: precioSinImpuestos (${fmt(neto)}) debería ser ${fmt(expNeto)}`,'Cantidad × valor unitario, menos descuentos, más cargos.','FAV06');
+    if(Number.isFinite(neto)) sumNeto+=neto;
+    let sT=0; (l.listaImpuestos||[]).forEach((t,k)=>{ const cod=st(t.codigoImpuestoRetencion).trim(), pc=N(t.porcentaje), v=N(t.valorImpuestoRetencion), b=N(t.baseImponible); const P=`${L}.listaImpuestos[${k}]`;
+      const ok=inCat('tributos',cod); out.checks++; mapRow(P+'.codigoImpuestoRetencion',cod,'FAX16',ok?'ok':'bad',ok?catName('tributos',cod):''); if(!ok) add('R','FAX16',`${lab}: tributo «${cod}» no está en la tabla 13.2.2`,'');
+      mapRow(P+'.porcentaje',t.porcentaje,'FAX14','');
+      out.checks++; const bOk=eq(b,neto); mapRow(P+'.baseImponible',t.baseImponible,'FAX05',bOk?'ok':'warn'); if(!bOk&&Number.isFinite(b)) add('A','FAX05',`${lab}: la base del tributo ${cod} (${fmt(b)}) es distinta del valor neto de la línea (${fmt(neto)})`,'Puede ser correcto si el tributo tiene base especial; confírmelo.');
+      out.checks++; const vOk=eq(b*pc/100,v); mapRow(P+'.valorImpuestoRetencion',t.valorImpuestoRetencion,'FAX07',vOk?'ok':'bad'); if(!vOk) add('R','FAX07',`${lab}: el ${fmt(pc)} % de ${fmt(b)} es ${fmt(b*pc/100)}, no ${fmt(v)}`,'');
+      if(Number.isFinite(v)){ sT+=v; const key=cod+'|'+pc; taxLines[key]=taxLines[key]||{v:0,b:0}; taxLines[key].v+=v; taxLines[key].b+=b||0; } });
+    if(Number.isFinite(tot)){ out.checks++; const ok=eq(tot,neto+sT); mapRow(L+'.precioTotal',l.precioTotal,'',ok?'ok':'bad','Valor de la línea con impuestos (no viaja como campo UBL propio)'); if(!ok) add('A',null,`${lab}: precioTotal (${fmt(tot)}) debería ser ${fmt(neto+sT)}`,'Valor neto más tributos de la línea.'); }
+    if(st(l.tipoImpuesto).trim()) mapRow(L+'.tipoImpuesto',l.tipoImpuesto,'','','Código interno (indicador de impuesto de SAP); no viaja a la DIAN');
+  });
+  // impuestos del encabezado
+  let sTaxHdr=0; const hdrTax={};
+  (j.listaImpuestos||[]).forEach((t,k)=>{ const cod=st(t.codigoImpuestoRetencion).trim(), pc=N(t.porcentaje), v=N(t.valorImpuestoRetencion), b=N(t.baseImponible); const P=`listaImpuestos[${k}]`;
+    const ok=inCat('tributos',cod); out.checks++; mapRow(P+'.codigoImpuestoRetencion',cod,'FAS16',ok?'ok':'bad',ok?catName('tributos',cod):''); if(!ok) add('R','FAS16',`Tributo «${cod}» no está en la tabla 13.2.2`,'');
+    mapRow(P+'.baseImponible',t.baseImponible,'FAS05',''); mapRow(P+'.valorImpuestoRetencion',t.valorImpuestoRetencion,'FAS07','');
+    if(Number.isFinite(v)) sTaxHdr+=v; const key=cod+'|'+pc; hdrTax[key]={v,b}; });
+  Object.entries(taxLines).forEach(([key,s])=>{ const [cod,pc]=key.split('|'); const h=hdrTax[key]; out.checks++;
+    if(!h) add('R','FAS07',`Falta en listaImpuestos el tributo ${cod} al ${fmt(+pc)} % que aparece en las líneas`,'');
+    else{ if(!eq(h.v,s.v)) add('R','FAS07',`Tributo ${cod} al ${fmt(+pc)} %: el total (${fmt(h.v)}) no es la suma de las líneas (${fmt(s.v)})`,'','FAS02'); if(!eq(h.b,s.b)) add('R','FAS05',`Tributo ${cod} al ${fmt(+pc)} %: la base total (${fmt(h.b)}) no es la suma de las bases de las líneas (${fmt(s.b)})`,''); } });
+  // totales
+  const TB=N(p.totalImporteBruto), BI=N(p.totalBaseImponible), BCI=N(p.totalBaseConImpuestos), TF=N(p.totalFactura);
+  const sBases=Object.values(taxLines).reduce((a,s)=>a+s.b,0);
+  const hD=(j.listaDescuentos||[]).reduce((a,d)=>a+(N(d.descuento)||0),0), hC=(j.listaCargos||[]).reduce((a,c)=>a+(N(c.cargo??c.valor)||0),0), ant=N(p.totalAnticipos)||0;
+  const tot=(key,val,id,exp,rule,label,expl)=>{ out.checks++; const ok=eq(val,exp); mapRow('pago.'+key,p[key],id,ok?'ok':'bad'); if(!ok) add('R',id,`${key} (${fmt(val)}) debería ser ${fmt(exp)}`,expl,rule); };
+  tot('totalImporteBruto',TB,'FAU02',sumNeto,'FAU02','','Suma del valor neto (precioSinImpuestos) de las líneas.');
+  tot('totalBaseImponible',BI,'FAU04',sBases,'FAU04','','Suma de las bases gravables de las líneas.');
+  tot('totalBaseConImpuestos',BCI,'FAU06',TB+sTaxHdr,'FAU06','','Total bruto más tributos.');
+  tot('totalFactura',TF,'FAU14',BCI-hD+hC-ant,'FAU14','','Total con impuestos, menos descuentos y anticipos, más cargos del encabezado.');
+  // adquiriente
+  const adqs=j.listaAdquirentes||[];
+  if(!adqs.length) add('R','FAK21','Falta el adquiriente (listaAdquirentes)','');
+  adqs.forEach((a,i)=>{ const P=`listaAdquirentes[${i}]`;
+    const tp=st(a.tipoPersona).trim(); const tpOk=inCat('tipoorg',tp); out.checks++; mapRow(P+'.tipoPersona',tp,'FAK02',tpOk?'ok':'bad',tpOk?catName('tipoorg',tp):''); if(!tpOk) add('R','FAK02',`Tipo de persona «${tp}» no está en la tabla 13.2.3`,'1 = jurídica, 2 = natural.');
+    mapRow(P+'.nombreCompleto',a.nombreCompleto,'FAK20',st(a.nombreCompleto).trim()?'ok':'bad','También alimenta FAK43 (PartyLegalEntity)'); if(!st(a.nombreCompleto).trim()) add('R','FAK20','Falta el nombre del adquiriente','');
+    const ti=st(a.tipoIdentificacion).trim(); const tiOk=inCat('tipoid',ti); out.checks++; mapRow(P+'.tipoIdentificacion',ti,'FAK25',tiOk?'ok':'bad',tiOk?catName('tipoid',ti):''); if(!tiOk) add('R','FAK25',`Tipo de identificación «${ti}» no está en la tabla 13.2.1`,'');
+    const nid=st(a.numeroIdentificacion).trim(); mapRow(P+'.numeroIdentificacion',nid,'FAK21',nid?'ok':'bad'); if(!nid) add('R','FAK21','Falta el número de identificación del adquiriente','','FAK21');
+    if(ti==='31'){ const dv=st(a.digitoVerificacion).trim(); const calc=/^\d+$/.test(nid)?nitDV(nid):null; out.checks++;
+      if(!dv){ mapRow(P+'.digitoVerificacion','','FAK24','bad'); add('R','FAK24','Falta el dígito de verificación del NIT','Si el tipo de identificación es 31, el DV es obligatorio.','FAK24'); }
+      else{ const ok=calc===null||String(calc)===dv; mapRow(P+'.digitoVerificacion',dv,'FAK24',ok?'ok':'bad',calc!==null?`Calculado: ${calc}`:''); if(!ok) add('R','FAK24',`El DV del NIT ${nid} debe ser ${calc}, no ${dv}`,'Calculado con el algoritmo de la DIAN (módulo 11).'); } }
+    const em=st(a.email).trim(); if(em){ const ok=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em); out.checks++; mapRow(P+'.email',em,'FAK55',ok?'ok':'bad'); if(!ok) add('N','FAK55',`El correo «${em}» no parece válido`,''); }
+    const miss=[]; const hasAny=ks=>ks.some(k=>st(a[k]).trim());
+    if(!hasAny(['direccion','direccionFiscal','direccionCompleta'])) miss.push('dirección');
+    if(!hasAny(['ciudad','codigoCiudad','municipio','codigoMunicipio'])) miss.push('ciudad o municipio');
+    if(!hasAny(['departamento','codigoDepartamento'])) miss.push('departamento');
+    if(!hasAny(['pais','codigoPais'])) miss.push('país');
+    if(!hasAny(['responsabilidadesFiscales','responsabilidadFiscal','codigoResponsabilidad','obligaciones'])) miss.push('responsabilidades fiscales (TaxLevelCode)');
+    if(!hasAny(['tributo','detallesTributarios','regimen','codigoTributo'])) miss.push('tributo (TaxScheme)');
+    if(miss.length) add('A','FAK26',`Al adquiriente le faltan datos que el UBL sí lleva: ${miss.join(', ')}`,`Confirme si su proveedor tecnológico los completa (de su base de clientes o con valores por defecto). ${tp==='1'?'Para una persona jurídica, un valor por defecto como R-99-PN podría no coincidir con su RUT.':''}`);
+  });
+  out.note+=` Datos del emisor, resolución de numeración, CUFE y firma los agrega el proveedor, así que no se revisan aquí.`;
+  const order={R:0,N:1,A:2}; out.findings.sort((a,b)=>order[a.sev]-order[b.sev]);
+  return out;
+}
+
+const JSON_SAMPLE="{\n  \"encabezado\": {\n    \"aplicaFel\": \"SI\",\n    \"idEmpresa\": \"0000\",\n    \"usuario\": \"\",\n    \"contrasenia\": \"\",\n    \"token\": \"\",\n    \"tipoDocumento\": \"1\",\n    \"prefijo\": \"SETP\",\n    \"consecutivo\": \"990000001\",\n    \"fechaFacturacion\": \"2026-10-13T16:43:05\",\n    \"codigoPlantillaPdf\": \"1\",\n    \"cantidadLineas\": \"1 \",\n    \"nombreVendedor\": \"Vendedor de ejemplo\",\n    \"tipoOperacion\": \"10\"\n  },\n  \"pago\": {\n    \"moneda\": \"COP\",\n    \"totalImporteBruto\": \"1800000.00\",\n    \"totalBaseImponible\": \"1800000.00\",\n    \"totalBaseConImpuestos\": \"2142000.00\",\n    \"totalFactura\": \"2142000.00\",\n    \"tipoCompra\": \"2\",\n    \"fechaVencimiento\": \"2026-11-12T16:43:05\"\n  },\n  \"listaDetalle\": [\n    {\n      \"codigoProducto\": \"PRD-001\",\n      \"tipoCodigoProducto\": \"999\",\n      \"nombreProducto\": \"Producto de ejemplo\",\n      \"cantidad\": \"2.000 \",\n      \"unidadMedida\": \"UN\",\n      \"valorUnitario\": \"1000000.00\",\n      \"precioSinImpuestos\": \"1800000.00\",\n      \"precioTotal\": \"2142000.00\",\n      \"posicion\": \"000010\",\n      \"tipoImpuesto\": \"A1\",\n      \"listaImpuestos\": [\n        {\n          \"codigoImpuestoRetencion\": \"01\",\n          \"porcentaje\": \"19.00\",\n          \"valorImpuestoRetencion\": \"342000.00\",\n          \"baseImponible\": \"1800000.00\"\n        }\n      ],\n      \"listaDescuentos\": [\n        {\n          \"codigoDescuento\": \"00\",\n          \"descuento\": \"200000.00\",\n          \"porcentajeDescuento\": \"10.00\"\n        }\n      ],\n      \"valorUnitarioPorCantidad\": \"4000000.00\"\n    }\n  ],\n  \"listaImpuestos\": [\n    {\n      \"codigoImpuestoRetencion\": \"01\",\n      \"porcentaje\": \"19.00\",\n      \"valorImpuestoRetencion\": \"342000.00\",\n      \"baseImponible\": \"1800000.00\"\n    }\n  ],\n  \"listaAdquirentes\": [\n    {\n      \"tipoPersona\": \"1\",\n      \"nombreCompleto\": \"Cliente Ejemplo S.A.S.\",\n      \"tipoIdentificacion\": \"31\",\n      \"numeroIdentificacion\": \"900123456\",\n      \"digitoVerificacion\": \"3\",\n      \"email\": \"facturas@ejemplo.com\"\n    }\n  ],\n  \"listaMediosPagos\": [\n    {\n      \"medioPago\": \"ZZZ\"\n    }\n  ]\n}";
 function sampleWithErrors(){
   const keep=new Set(tplState.opts), kc=tplState.comments; tplState.opts=new Set(['tax']); tplState.comments=false;
   let x=buildTemplate().xml; tplState.opts=keep; tplState.comments=kc;
@@ -950,13 +1102,14 @@ function renderVal(){
       res=`<div class="vres"><div class="vsum ${c.R?'bad':c.N?'warn':'ok'}"><b>${esc(head)}</b><span>${r.checks} verificaciones · ${c.R} ${c.R===1?'rechazo probable':'rechazos probables'} · ${c.N} ${c.N===1?'notificación':'notificaciones'} · ${c.A} para revisar${valState.file?` · ${esc(valState.file)}`:''}</span></div>
       ${r.note?`<p class="small">${esc(r.note)}</p>`:''}
       <div class="vlist">${r.findings.map(f=>`<div class="vf ${SEV[f.sev][0]}"><span class="vsev">${f.sev==='R'?ICON_R:f.sev==='N'?ICON_N:''}${SEV[f.sev][1]}</span><div class="vbody"><b>${esc(f.title)}</b>${f.detail?`<span>${esc(f.detail)}</span>`:''}<span class="vmeta">${f.id?`<button class="textlink" type="button" data-goto="${f.id}">${esc(f.id)} · ${esc(f.name)}</button>`:''}${f.rule&&f.rule!==f.id?`<code>${esc(f.rule)}</code>`:''}</span></div></div>`).join('')}</div>
-      <p class="small">eDocHub revisa estructura, campos obligatorios, ocurrencias, valores fijos, catálogos, formatos, dígito de verificación, numeración y totales. No verifica la firma digital, el CUFE ni los datos que solo conoce la DIAN, como el RUT o la resolución de numeración. La validación oficial la hace la DIAN.</p></div>`;
+      ${r.map&&r.map.length?`<details class="vmap" open><summary>Mapa del JSON a los campos UBL <span>${r.map.length} datos</span></summary><div class="vmapwrap"><table><thead><tr><th>Dato del JSON</th><th>Valor</th><th>Campo UBL</th><th></th></tr></thead><tbody>${r.map.map(m=>{const f=m.id&&byId.get(m.id); return `<tr class="${m.estado}"><td><code>${esc(m.json)}</code></td><td><code>${esc(m.val.trim().slice(0,60))}</code>${m.nota?`<span>${esc(m.nota)}</span>`:''}</td><td>${f?`<button class="textlink" type="button" data-goto="${f.id}">${esc(f.id)} · ${esc(f.nombre)}</button>`:'<span class="muted">—</span>'}</td><td class="vst">${m.estado==='ok'?'✓':m.estado==='bad'?'✕':m.estado==='warn'?'!':''}</td></tr>`;}).join('')}</tbody></table></div></details>`:''}
+      ${r.kind==='json'?`<p class="small">eDocHub revisa el JSON antes de que su proveedor tecnológico lo traduzca: catálogos, dígito de verificación, cálculos de líneas, impuestos y totales, y datos que suelen faltar. El resultado final depende de cómo el proveedor transforme cada dato; la validación oficial la hace la DIAN.</p>`:`<p class="small">eDocHub revisa estructura, campos obligatorios, ocurrencias, valores fijos, catálogos, formatos, dígito de verificación, numeración y totales. No verifica la firma digital, el CUFE ni los datos que solo conoce la DIAN, como el RUT o la resolución de numeración. La validación oficial la hace la DIAN.</p>`}</div>`;
     }
   }
   return `<div class="val">
-    <p class="vpriv">El XML se revisa en su navegador. No se envía ni se guarda en ningún servidor.</p>
-    <div class="vdrop" id="vdrop"><textarea id="valIn" spellcheck="false" placeholder="Pegue aquí el XML de la factura, o arrastre el archivo .xml a este recuadro. También sirve el AttachedDocument que se envía al cliente.">${esc(valState.text)}</textarea></div>
-    <div class="tpl-bar"><span class="meta"><button class="pbtn" type="button" data-valrun>Validar</button><label class="sbtn" for="valFile" style="cursor:pointer">Abrir archivo .xml</label><input type="file" id="valFile" accept=".xml,text/xml,application/xml" hidden><button class="sbtn" type="button" data-valsample>Probar con un ejemplo con errores</button></span>${valState.text?'<button class="textlink" type="button" data-valclear>Limpiar</button>':''}</div>
+    <p class="vpriv">El archivo se revisa en su navegador. No se envía ni se guarda en ningún servidor.</p>
+    <div class="vdrop" id="vdrop"><textarea id="valIn" spellcheck="false" placeholder="Pegue aquí el XML de la factura o el JSON que envía a su proveedor tecnológico, o arrastre el archivo a este recuadro. También sirve el AttachedDocument que se envía al cliente.">${esc(valState.text)}</textarea></div>
+    <div class="tpl-bar"><span class="meta"><button class="pbtn" type="button" data-valrun>Validar</button><label class="sbtn" for="valFile" style="cursor:pointer">Abrir archivo</label><input type="file" id="valFile" accept=".xml,.json,text/xml,application/xml,application/json" hidden><button class="sbtn" type="button" data-valsample>Ejemplo XML con errores</button><button class="sbtn" type="button" data-valjson>Ejemplo JSON con errores</button></span>${valState.text?'<button class="textlink" type="button" data-valclear>Limpiar</button>':''}</div>
     ${res}
   </div>`;
 }
@@ -1107,7 +1260,7 @@ function wire(){
   $('#vCat').addEventListener('click',()=>setView('cat'));
   $('#vTpl').addEventListener('click',()=>setView('tpl'));
   $('#vVal').addEventListener('click',()=>setView('val'));
-  const runVal=()=>{ valState.text=$('#valIn').value; if(!valState.text.trim()){toast('Pegue un XML o abra un archivo');return;} valState.res=validateXml(valState.text); render(); const r=document.querySelector('.vres'); if(r) r.scrollIntoView({block:'start',behavior:'smooth'}); };
+  const runVal=()=>{ valState.text=$('#valIn').value; if(!valState.text.trim()){toast('Pegue un XML o abra un archivo');return;} valState.res=/^\s*[\[{]/.test(valState.text)?validateJson(valState.text):validateXml(valState.text); render(); const r=document.querySelector('.vres'); if(r) r.scrollIntoView({block:'start',behavior:'smooth'}); };
   const loadFile=f=>{ if(!f) return; if(f.size>8e6){toast('El archivo supera 8 MB');return;} const rd=new FileReader(); rd.onload=()=>{valState.text=String(rd.result); valState.file=f.name; $('#valIn').value=valState.text; runVal();}; rd.readAsText(f); };
   $('#list').addEventListener('input',e=>{ if(e.target.id==='valIn'){ valState.text=e.target.value; valState.file=''; } });
   $('#list').addEventListener('change',e=>{ if(e.target.id==='valFile') loadFile(e.target.files[0]); });
@@ -1117,6 +1270,7 @@ function wire(){
   $('#list').addEventListener('click',e=>{
     if(e.target.closest('[data-valrun]')){ runVal(); return; }
     if(e.target.closest('[data-valsample]')){ valState.text=sampleWithErrors(); valState.file='ejemplo-con-errores.xml'; $('#valIn').value=valState.text; runVal(); return; }
+    if(e.target.closest('[data-valjson]')){ valState.text=JSON_SAMPLE; valState.file='ejemplo-integracion.json'; $('#valIn').value=valState.text; runVal(); return; }
     if(e.target.closest('[data-valclear]')){ valState.text=''; valState.res=null; valState.file=''; render(); return; }
   });
   $('#list').addEventListener('change',e=>{

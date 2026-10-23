@@ -8,7 +8,7 @@ eDocHub es una herramienta web **no oficial** para consultar rápido el Anexo T�
 
 Sirve para desarrolladores, proveedores tecnológicos, consultores de ERP (SAP, Oracle, Siesa, etc.) y equipos contables que trabajan con facturación electrónica en Colombia.
 
-- **Validar XML**: pegue o arrastre una factura y vea campos obligatorios faltantes, códigos fuera de catálogo, formatos, dígito de verificación y totales. Todo se procesa en el navegador.
+- **Validar**: pegue o arrastre una factura en XML UBL, o el JSON que envía a su proveedor tecnológico, y vea campos obligatorios faltantes, códigos fuera de catálogo, formatos, dígito de verificación y totales. Todo se procesa en el navegador.
 
 ## Qué hace
 
