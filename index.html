@@ -350,6 +350,16 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
 .dlg{padding:var(--s5) var(--s5);display:flex;flex-direction:column;gap:var(--s3);font-size:14.5px}
 .dlg h2{font-family:var(--f-serif);font-weight:600;margin:0;font-size:24px}
 .dlg p{margin:0}
+.helpbtn{background:var(--accent);color:#fff;border:0;border-radius:999px;padding:7px 14px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.helpbtn:hover{filter:brightness(1.1)}
+.helplist{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.helpact{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.helpact .pbtn{text-decoration:none;display:inline-flex;align-items:center}
+.vcta{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);border-radius:var(--r);background:var(--accent-soft);flex-wrap:wrap}
+.vcta div{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.vcta span{color:var(--ink-2);font-size:13px}
+.helpbtn{white-space:nowrap}.hl-short{display:none}
+@media (max-width:560px){.helpbtn{padding:6px 12px;font-size:13px}.hl-full{display:none}.hl-short{display:inline}.tb-actions a.linkbtn{display:none}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:var(--r);font-size:13px;z-index:30}
 
 @media (max-width:1080px){
@@ -382,7 +392,7 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
 <div class="wrap">
   <header class="topbar">
     <button class="brand" type="button" id="homeBtn" aria-label="Ver la factura completa"><svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="12" fill="currentColor"/><g stroke="var(--paper)" stroke-width="3" stroke-linecap="round" fill="none"><path d="M15 12.5v21.5"/><path d="M15 15h10"/><path d="M15 24.5h10"/><path d="M15 34h10"/></g><circle cx="31" cy="15" r="3" fill="var(--paper)"/><circle cx="31" cy="24.5" r="3" fill="var(--paper)"/><circle cx="31" cy="34" r="3.4" fill="var(--mkdot)"/></svg><span class="wm">eDoc<b>Hub</b></span> <small>Factura electrónica · Anexo técnico DIAN v1.9</small></button>
-    <div class="tb-actions"><button class="linkbtn" type="button" id="aboutBtn">Cómo leerlo</button><a class="linkbtn" href="https://github.com/mangelicacardenasm-oss/eDocHub/issues/new?title=Sugerencia%20para%20eDocHub&body=%C2%BFQu%C3%A9%20buscaba%20y%20qu%C3%A9%20le%20falt%C3%B3%3F%0A%0A" target="_blank" rel="noopener">Enviar comentario</a></div>
+    <div class="tb-actions"><button class="linkbtn" type="button" id="aboutBtn">Cómo leerlo</button><button class="helpbtn" type="button" data-help><span class="hl-full">Ayuda con su integración</span><span class="hl-short">Ayuda</span></button><a class="linkbtn" href="https://github.com/mangelicacardenasm-oss/eDocHub/issues/new?title=Sugerencia%20para%20eDocHub&body=%C2%BFQu%C3%A9%20buscaba%20y%20qu%C3%A9%20le%20falt%C3%B3%3F%0A%0A" target="_blank" rel="noopener">Enviar comentario</a></div>
   </header>
 
   <div id="app" style="display:flex;flex-direction:column;gap:var(--s5)">
@@ -459,9 +469,24 @@ dialog::backdrop{background:rgba(10,16,28,.5)}
 
   <footer>
     <span><b>eDocHub</b> · Fuente: Anexo técnico de factura electrónica de venta v1.9 (DIAN, Resolución 000165 de 2023) y tablas de la Caja de herramientas DIAN.</span>
-    <span>Proyecto independiente, sin relación con la DIAN. Verifique siempre contra el anexo vigente.</span>
+    <span>Proyecto independiente, sin relación con la DIAN. Verifique siempre contra el anexo vigente. Creado por Maria Angelica Cardenas · <a href="#" data-mail data-mail-subject="Contacto eDocHub">Contacto</a></span>
   </footer>
 </div>
+
+<dialog id="help">
+  <div class="dlg">
+    <h2>¿Necesita ayuda con su facturación electrónica?</h2>
+    <p>Soy Maria Angelica Cardenas, consultora en procesos Order-to-Cash y facturación electrónica en Colombia, y creé eDocHub. Puedo ayudarle con:</p>
+    <ul class="helplist">
+      <li><b>Diagnóstico de integración.</b> Reviso cómo viajan los datos de su ERP al proveedor tecnológico y al XML UBL, y le entrego los riesgos de rechazo con su solución.</li>
+      <li><b>Rechazos y notificaciones de la DIAN.</b> Le explico qué significa cada regla y dónde se origina el error.</li>
+      <li><b>Habilitación y salida a producción.</b> Acompañamiento en el set de pruebas y en las primeras semanas.</li>
+      <li><b>Capacitación</b> para equipos funcionales, técnicos y de soporte.</li>
+    </ul>
+    <p class="small">Cuénteme en el correo qué ERP usa, cuál es su proveedor tecnológico y qué necesita. No adjunte facturas con datos reales de clientes en el primer mensaje.</p>
+    <div class="helpact"><a class="pbtn" href="#" data-mail data-mail-subject="Ayuda con facturación electrónica (eDocHub)" data-mail-body="Hola Maria Angelica,%0A%0AEmpresa:%0AERP (SAP u otro):%0AProveedor tecnológico:%0A¿Qué necesito?:%0A%0A">Escribirme</a><button class="btn" type="button" id="helpClose">Cerrar</button></div>
+  </div>
+</dialog>
 
 <dialog id="about">
   <div class="dlg">
@@ -1109,6 +1134,7 @@ function renderVal(){
       ${r.note?`<p class="small">${esc(r.note)}</p>`:''}
       <div class="vlist">${r.findings.map(f=>`<div class="vf ${SEV[f.sev][0]}"><span class="vsev">${f.sev==='R'?ICON_R:f.sev==='N'?ICON_N:''}${SEV[f.sev][1]}</span><div class="vbody"><b>${esc(f.title)}</b>${f.detail?`<span>${esc(f.detail)}</span>`:''}<span class="vmeta">${f.id?`<button class="textlink" type="button" data-goto="${f.id}">${esc(f.id)} · ${esc(f.name)}</button>`:''}${f.rule&&f.rule!==f.id?`<code>${esc(f.rule)}</code>`:''}</span></div></div>`).join('')}</div>
       ${r.map&&r.map.length?`<details class="vmap" open><summary>Mapa del JSON a los campos UBL <span>${r.map.length} datos</span></summary><div class="vmapwrap"><table><thead><tr><th>Dato del JSON</th><th>Valor</th><th>Campo UBL</th><th></th></tr></thead><tbody>${r.map.map(m=>{const f=m.id&&byId.get(m.id); return `<tr class="${m.estado}"><td><code>${esc(m.json)}</code></td><td><code>${esc(m.val.trim().slice(0,60))}</code>${m.nota?`<span>${esc(m.nota)}</span>`:''}</td><td>${f?`<button class="textlink" type="button" data-goto="${f.id}">${esc(f.id)} · ${esc(f.nombre)}</button>`:'<span class="muted">—</span>'}</td><td class="vst">${m.estado==='ok'?'✓':m.estado==='bad'?'✕':m.estado==='warn'?'!':''}</td></tr>`;}).join('')}</tbody></table></div></details>`:''}
+      <div class="vcta"><div><b>${c.R||c.N?'¿Quiere ayuda para corregir estos hallazgos?':'¿Va a salir a producción o integrar otro documento?'}</b><span>Reviso su integración del ERP al proveedor tecnológico y a la DIAN.</span></div><button class="sbtn" type="button" data-help>Hablemos</button></div>
       ${r.kind==='json'?`<p class="small">eDocHub revisa el JSON antes de que su proveedor tecnológico lo traduzca: catálogos, dígito de verificación, cálculos de líneas, impuestos y totales, y datos que suelen faltar. El resultado final depende de cómo el proveedor transforme cada dato; la validación oficial la hace la DIAN.</p>`:`<p class="small">eDocHub revisa estructura, campos obligatorios, ocurrencias, valores fijos, catálogos, formatos, dígito de verificación, numeración y totales. No verifica la firma digital, el CUFE ni los datos que solo conoce la DIAN, como el RUT o la resolución de numeración. La validación oficial la hace la DIAN.</p>`}</div>`;
     }
   }
@@ -1304,6 +1330,12 @@ function wire(){
   });
   $('#aboutBtn').addEventListener('click',()=>{try{$('#about').showModal();}catch(e){$('#about').setAttribute('open','');}});
   $('#aboutClose').addEventListener('click',()=>$('#about').close());
+  const MAIL=['mangelicacardenasm','gmail.com'].join('@');
+  const setMail=root=>root.querySelectorAll('[data-mail]').forEach(a=>{a.href='mailto:'+MAIL+'?subject='+encodeURIComponent(a.dataset.mailSubject||'eDocHub')+(a.dataset.mailBody?'&body='+a.dataset.mailBody:'');});
+  setMail(document);
+  const openHelp=()=>{try{$('#help').showModal();}catch(e){$('#help').setAttribute('open','');} if(window.goatcounter&&goatcounter.count) goatcounter.count({path:'ayuda-abrir',title:'Abrió ayuda',event:true});};
+  document.addEventListener('click',e=>{ if(e.target.closest('[data-help]')){ e.preventDefault(); openHelp(); } const m=e.target.closest('a[data-mail]'); if(m&&window.goatcounter&&goatcounter.count) goatcounter.count({path:'contacto-correo',title:'Clic en correo',event:true}); });
+  $('#helpClose').addEventListener('click',()=>$('#help').close());
   document.addEventListener('keydown',e=>{
     if(e.key==='/'&&!e.target.closest('input,select,textarea')){e.preventDefault();$('#q').focus();}
     if(e.key==='Escape') $('#detail').classList.remove('open');
